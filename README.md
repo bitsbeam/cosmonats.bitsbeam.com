@@ -8,9 +8,10 @@ Plain static HTML / CSS / JS — no build step, no dependencies.
 ```
 /
 ├── index.html                      # home: hero, blog teaser, journey, code, about
+├── about.html                      # about bitsbeam
 ├── blog/
-│   ├── cron-without-a-cron-box.html    # #002 (latest)
-│   └── why-we-beamed-off-redis.html    # #001
+│   ├── cron-without-a-cron-box.html    # #002 (hidden: unlisted, noindex)
+│   └── why-we-beamed-off-redis.html    # #001 (latest)
 └── assets/
     ├── application.css   # all styles: tokens, base, components, home, post
     ├── application.js    # all behaviour: starfield, beam, journey, copy, reading progress
