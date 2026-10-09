@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cosmonats — background jobs &amp; streams for Ruby, backed by NATS</title>
+  <meta name="description" content="Background jobs and real-time event streaming for Ruby — one gem, backed by NATS. No Redis. No DB polling. No message silently dropped.">
+  <meta name="theme-color" content="#060913">
+  <meta property="og:title" content="Cosmonats by bitsbeam">
+  <meta property="og:description" content="Background jobs and real-time event streaming for Ruby — one gem, backed by NATS.">
+  <meta property="og:image" content="assets/img/logo.svg">
+  <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="assets/application.css">
+  <script src="assets/application.js" defer></script>
+</head>
+<body>
+  <canvas class="starfield" data-starfield data-density="1" data-parallax="0.25" aria-hidden="true"></canvas>
+
+  <!-- ===================== Navigation ===================== -->
+  <header class="site-nav">
+    <a class="brand" href="#top" aria-label="Cosmonats home">
+      <img class="brand__logo" src="assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="#blog">blog</a>
+      <a class="nav-secondary" href="#journey">journey</a>
+      <a class="nav-secondary" href="#code">code</a>
+      <a class="nav-secondary" href="#bitsbeam">bitsbeam</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===================== Hero ===================== -->
+    <section id="top" class="container hero">
+      <div class="hero__copy">
+        <p class="eyebrow">Ruby gem · jobs + streams · NATS</p>
+        <h1 class="hero__title">Cosmo&shy;nats</h1>
+        <p class="hero__lede">Background jobs and real-time event streaming for Ruby — one gem, backed by NATS.</p>
+        <p class="hero__tagline">No Redis. No DB polling.<br>No message silently dropped.</p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#journey">Start the journey ↓</a>
+          <button class="btn btn--terminal" type="button" data-copy='gem "cosmonats"'>
+            <span class="btn__prompt">$</span><span>gem "cosmonats"</span><span class="btn__hint" data-copy-label>copy</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- UFO abducting a cow; the beam carries the cow as 0101 data -->
+      <figure class="ufo-scene" aria-hidden="true">
+        <div class="beam" data-beam data-columns="11"></div>
+
+        <svg class="ufo-scene__layer" viewBox="0 0 400 480">
+          <defs>
+            <linearGradient id="beamGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#7fe3ff" stop-opacity="0.7"/>
+              <stop offset="1" stop-color="#7fe3ff" stop-opacity="0.04"/>
+            </linearGradient>
+          </defs>
+          <path d="M-40 490 Q200 400 440 490 Z" fill="#101a33"/>
+          <circle cx="96" cy="462" r="9" fill="#0a1226"/>
+          <circle cx="310" cy="455" r="6" fill="#0a1226"/>
+          <g class="ufo-scene__ufo">
+            <polygon points="160,128 240,128 340,430 60,430" fill="url(#beamGradient)"/>
+            <path d="M140 94 C140 36 260 36 260 94 Z" fill="#9fe6ff" fill-opacity="0.85" stroke="#0b0f1e" stroke-width="4"/>
+            <circle cx="200" cy="74" r="15" fill="#8fe36f" stroke="#0b0f1e" stroke-width="3"/>
+            <ellipse cx="194" cy="72" rx="3.5" ry="5" fill="#0b0f1e"/>
+            <ellipse cx="206" cy="72" rx="3.5" ry="5" fill="#0b0f1e"/>
+            <ellipse cx="200" cy="102" rx="152" ry="34" fill="#c9cfdc" stroke="#0b0f1e" stroke-width="4"/>
+            <ellipse cx="200" cy="116" rx="96" ry="17" fill="#6d7894" stroke="#0b0f1e" stroke-width="4"/>
+            <ellipse cx="200" cy="126" rx="40" ry="8" fill="#7fe3ff" stroke="#0b0f1e" stroke-width="3"/>
+            <circle class="anim-blink" cx="78" cy="102" r="6" fill="#ffb15a" stroke="#0b0f1e" stroke-width="2.5"/>
+            <circle class="anim-blink delay-1" cx="118" cy="110" r="6" fill="#7fe3ff" stroke="#0b0f1e" stroke-width="2.5"/>
+            <circle class="anim-blink delay-2" cx="282" cy="110" r="6" fill="#7fe3ff" stroke="#0b0f1e" stroke-width="2.5"/>
+            <circle class="anim-blink delay-3" cx="322" cy="102" r="6" fill="#ffb15a" stroke="#0b0f1e" stroke-width="2.5"/>
+          </g>
+        </svg>
+
+        <svg class="ufo-scene__layer ufo-scene__layer--front" viewBox="0 0 400 480">
+          <g class="ufo-scene__cow">
+            <!-- far legs -->
+            <rect x="158" y="310" width="13" height="36" rx="5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
+            <rect x="180" y="310" width="13" height="40" rx="5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
+            <rect x="222" y="310" width="13" height="38" rx="5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
+            <rect x="244" y="310" width="13" height="34" rx="5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
+            <!-- tail -->
+            <path d="M150 290 Q126 300 134 328" stroke="#0b0f1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <circle cx="134" cy="330" r="6" fill="#0b0f1e"/>
+            <!-- body + spots -->
+            <rect x="146" y="266" width="122" height="60" rx="30" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="4"/>
+            <ellipse cx="180" cy="284" rx="17" ry="11" fill="#0b0f1e"/>
+            <ellipse cx="234" cy="306" rx="13" ry="9" fill="#0b0f1e"/>
+            <ellipse cx="212" cy="277" rx="8" ry="6" fill="#0b0f1e"/>
+            <!-- udder -->
+            <rect x="189.75" y="334" width="3.5" height="7" rx="1.75" fill="#e88aa0" stroke="#0b0f1e" stroke-width="2"/>
+            <rect x="195.25" y="335" width="3.5" height="7.5" rx="1.75" fill="#e88aa0" stroke="#0b0f1e" stroke-width="2"/>
+            <rect x="200.75" y="334" width="3.5" height="7" rx="1.75" fill="#e88aa0" stroke="#0b0f1e" stroke-width="2"/>
+            <path d="M185 323 C184.5 333 191 337 197 337 C203 337 209.5 333 209 323 Z" fill="#f3a6b8" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M189 328 Q191.5 333 196 334" stroke="#ffffff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.6"/>
+            <!-- near legs (in front of udder) -->
+            <path d="M180 320 L180 345 Q180 350 186.5 350 Q193 350 193 345 L193 320" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M222 320 L222 343 Q222 348 228.5 348 Q235 348 235 343 L235 320" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
+            <!-- horns, ears, head -->
+            <path d="M261 252 Q254 234 266 236" stroke="#0b0f1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M293 252 Q300 234 288 236" stroke="#0b0f1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <ellipse cx="250" cy="258" rx="11" ry="5.5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
+            <ellipse cx="304" cy="258" rx="11" ry="5.5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
+            <rect x="252" y="246" width="50" height="44" rx="18" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="4"/>
+            <rect x="258" y="272" width="38" height="20" rx="10" fill="#f3a6b8" stroke="#0b0f1e" stroke-width="3"/>
+            <circle cx="269" cy="282" r="2.6" fill="#0b0f1e"/>
+            <circle cx="285" cy="282" r="2.6" fill="#0b0f1e"/>
+            <circle cx="267" cy="261" r="4" fill="#0b0f1e"/>
+            <circle cx="287" cy="261" r="4" fill="#0b0f1e"/>
+          </g>
+        </svg>
+      </figure>
+
+      <a class="scroll-hint" href="#journey">
+        <span>scroll to launch</span><span class="scroll-hint__arrow" aria-hidden="true">↓</span>
+      </a>
+    </section>
+
+    <!-- ===================== Blog ===================== -->
+    <section id="blog" class="container blog" aria-labelledby="blog-title">
+      <div class="section-head">
+        <div class="section-head__titles">
+          <p class="eyebrow">Transmissions · blog</p>
+          <h2 id="blog-title" class="section-title">Notes from the crew.</h2>
+        </div>
+        <span class="section-head__meta">2 transmissions received</span>
+      </div>
+
+      <!-- Latest post: featured card -->
+      <a class="post-feature" href="blog/cron-without-a-cron-box.html">
+        <div class="post-feature__art" aria-hidden="true">
+          <div class="post-feature__bits">01100011 01101111 01110111 00100000 01100010 01100101 01100001 01101101 01100101 01100100 00100000 01110101 01110000 00100000 01110011 01100001 01100110 01100101 01101100 01111001 01100011 01101111 01110111 00100000 01100010 01100101 01100001 01101101 01100101 01100100 00100000 01110101 01110000 00100000 01110011 01100001 01100110 01100101 01101100 01111001</div>
+          <div class="post-feature__emblem">
+            <span class="post-feature__emblem-text">0 9 * * 1-5</span>
+            <span class="post-feature__emblem-tag">engineering</span>
+          </div>
+        </div>
+        <div class="post-feature__body">
+          <div class="post-meta">
+            <span class="badge">Latest</span>
+            <span class="post-meta__accent">#002</span>
+            <time datetime="2026-10-08">Oct 8, 2026</time>
+            <span>4 min read</span>
+          </div>
+          <h3 class="post-feature__title">Cron without a cron box</h3>
+          <p class="post-feature__excerpt">Recurring jobs usually mean one more process to babysit. In Cosmonats, a schedule is just a message parked in NATS — and NATS keeps the time.</p>
+          <span class="read-more">Read transmission →</span>
+        </div>
+      </a>
+
+      <!-- Older posts: newest first -->
+      <div class="blog__archive">
+        <p class="post-list__label">Earlier transmissions</p>
+        <ul class="post-list">
+          <li>
+            <a class="post-row" href="blog/why-we-beamed-off-redis.html">
+              <span class="post-row__text">
+                <span class="post-meta"><span class="post-meta__accent">#001</span><time datetime="2026-09-24">Sep 24, 2026</time><span>6 min read</span></span>
+                <span class="post-row__title">Why we beamed our background jobs off Redis</span>
+                <span class="post-row__excerpt">Redis learned to queue. NATS learned to store.</span>
+              </span>
+              <span class="post-row__arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===================== Journey ===================== -->
+    <!-- data-vehicle: "rocket" | "ufo"   data-trail: "true" | "false" -->
+    <section id="journey" class="journey" data-vehicle="rocket" data-trail="true" aria-labelledby="journey-title">
+      <div class="journey__intro">
+        <p class="eyebrow eyebrow--orange">Mission log</p>
+        <h2 id="journey-title" class="section-title">Why we built it, one waypoint at a time.</h2>
+      </div>
+
+      <div class="journey__map" data-journey-map>
+        <svg class="journey__svg" aria-hidden="true">
+          <path class="journey__track" data-journey-track/>
+          <path class="journey__trail" data-journey-trail/>
+        </svg>
+        <div class="journey__markers" data-journey-markers aria-hidden="true"></div>
+
+        <ol class="journey__stops">
+          <li class="journey__stop" data-stop>
+            <article class="waypoint" data-card>
+              <div class="waypoint__head"><span class="waypoint__tag">Ignition</span><span class="waypoint__num">WP-01</span></div>
+              <h3 class="waypoint__title">Why build another job runner?</h3>
+              <p class="waypoint__body">Most Ruby job libraries lean on Redis or Postgres — tools that were never designed to be message brokers. We wanted an engine built for messaging first.</p>
+              <ul class="chip-list"><li class="chip">Redis: KV first</li><li class="chip">NATS: messaging first</li></ul>
+            </article>
+          </li>
+          <li class="journey__stop" data-stop>
+            <article class="waypoint" data-card>
+              <div class="waypoint__head"><span class="waypoint__tag">Fuel · NATS</span><span class="waypoint__num">WP-02</span></div>
+              <h3 class="waypoint__title">A tiny engine with enormous range</h3>
+              <p class="waypoint__body">One NATS server replaces your message broker, job queue and KV store — with far less to operate.</p>
+              <ul class="chip-list"><li class="chip">~20 MB binary</li><li class="chip">~10 MB RAM idle</li><li class="chip">disk-backed</li></ul>
+            </article>
+          </li>
+          <li class="journey__stop" data-stop>
+            <article class="waypoint" data-card>
+              <div class="waypoint__head"><span class="waypoint__tag">Two stages, one rocket</span><span class="waypoint__num">WP-03</span></div>
+              <h3 class="waypoint__title">Jobs and streams in one gem</h3>
+              <p class="waypoint__body">A first-class Job and a first-class Stream, sharing one server, one config, one CLI and one monitoring endpoint.</p>
+              <ul class="chip-list"><li class="chip">perform_async</li><li class="chip">process_one</li><li class="chip">one cosmo.yml</li></ul>
+            </article>
+          </li>
+          <li class="journey__stop" data-stop>
+            <article class="waypoint" data-card>
+              <div class="waypoint__head"><span class="waypoint__tag">Time travel</span><span class="waypoint__num">WP-04</span></div>
+              <h3 class="waypoint__title">Replay any message, from any moment</h3>
+              <p class="waypoint__body">Messages persist to disk. Rewind a consumer to the beginning of time, a timestamp, or only new messages.</p>
+              <ul class="chip-list"><li class="chip">incident recovery</li><li class="chip">bootstrap consumers</li><li class="chip">reproduce bugs</li></ul>
+            </article>
+          </li>
+          <li class="journey__stop" data-stop>
+            <article class="waypoint" data-card>
+              <div class="waypoint__head"><span class="waypoint__tag">Deep space network</span><span class="waypoint__num">WP-05</span></div>
+              <h3 class="waypoint__title">Multi-datacenter, natively</h3>
+              <p class="waypoint__body">Clusters and leaf nodes are built into NATS. Spanning regions is a config block, not another product. Lose a node, lose nothing.</p>
+              <ul class="chip-list"><li class="chip">clustering</li><li class="chip">leaf nodes</li><li class="chip">geo-distribution</li></ul>
+            </article>
+          </li>
+          <li class="journey__stop" data-stop>
+            <article class="waypoint" data-card>
+              <div class="waypoint__head"><span class="waypoint__tag">No space junk</span><span class="waypoint__num">WP-06</span></div>
+              <h3 class="waypoint__title">Dedup at the broker, KV built in</h3>
+              <p class="waypoint__body">Same-ID messages inside the window are dropped before they reach a worker. A built-in KV store handles locks and rate limits.</p>
+              <ul class="chip-list"><li class="chip">no uniqueness gems</li><li class="chip">no Redis</li><li class="chip">no Memcached</li></ul>
+            </article>
+          </li>
+          <li class="journey__stop" data-stop>
+            <article class="waypoint" data-card>
+              <div class="waypoint__head"><span class="waypoint__tag">Mission control</span><span class="waypoint__num">WP-07</span></div>
+              <h3 class="waypoint__title">Watch every job in real time</h3>
+              <p class="waypoint__body">Mount Cosmo::Web for a live dashboard of jobs, streams, crons and batches — retry, pause and run from one place.</p>
+              <ul class="chip-list"><li class="chip">jobs</li><li class="chip">streams</li><li class="chip">crons</li><li class="chip">batches</li></ul>
+            </article>
+          </li>
+          <li class="journey__stop" data-stop>
+            <article class="waypoint" data-card>
+              <div class="waypoint__head"><span class="waypoint__tag">Orbit reached</span><span class="waypoint__num">WP-08</span></div>
+              <h3 class="waypoint__title">Battle-tested in production</h3>
+              <p class="waypoint__body">Tens of millions of jobs processed and counting. Horizontally scalable, and no message is ever silently dropped.</p>
+              <ul class="chip-list"><li class="chip">Ruby ≥ 3.1</li><li class="chip">ActiveJob adapter</li><li class="chip">Sentry</li></ul>
+            </article>
+          </li>
+        </ol>
+
+        <div class="vehicle" data-journey-vehicle aria-hidden="true">
+          <svg class="vehicle__rocket" width="62" height="118" viewBox="0 0 60 116">
+            <g class="vehicle__flame">
+              <path d="M19 84 Q30 120 41 84 Z" fill="#ff8a3d" stroke="#0b0f1e" stroke-width="2.5"/>
+              <path d="M24 84 Q30 106 36 84 Z" fill="#ffe27a"/>
+            </g>
+            <path d="M18 58 L3 86 L19 80 Z" fill="#e2524a" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M42 58 L57 86 L41 80 Z" fill="#e2524a" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M30 3 C45 17 47 50 42 84 L18 84 C13 50 15 17 30 3 Z" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M30 3 C37 10 40 17 41.5 24 L18.5 24 C20 17 23 10 30 3 Z" fill="#e2524a" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
+            <circle cx="30" cy="44" r="8.5" fill="#7fe3ff" stroke="#0b0f1e" stroke-width="3.5"/>
+            <path d="M26 41 Q28 38 31 38" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <rect x="27.5" y="64" width="5" height="22" rx="2" fill="#e2524a" stroke="#0b0f1e" stroke-width="2.5"/>
+          </svg>
+          <svg class="vehicle__ufo" width="112" height="76" viewBox="0 0 120 80">
+            <polygon points="48,52 72,52 92,100 28,100" fill="#7fe3ff" opacity="0.25"/>
+            <path d="M38 36 C38 12 82 12 82 36 Z" fill="#9fe6ff" fill-opacity="0.85" stroke="#0b0f1e" stroke-width="3"/>
+            <circle cx="60" cy="28" r="7" fill="#8fe36f" stroke="#0b0f1e" stroke-width="2.5"/>
+            <ellipse cx="60" cy="40" rx="54" ry="13" fill="#c9cfdc" stroke="#0b0f1e" stroke-width="3"/>
+            <ellipse cx="60" cy="47" rx="30" ry="6" fill="#6d7894" stroke="#0b0f1e" stroke-width="3"/>
+            <circle class="anim-blink" cx="20" cy="41" r="3.5" fill="#ffb15a"/>
+            <circle class="anim-blink delay-1" cx="60" cy="44" r="3.5" fill="#7fe3ff"/>
+            <circle class="anim-blink delay-2" cx="100" cy="41" r="3.5" fill="#ffb15a"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Code ===================== -->
+    <section id="code" class="container code-section" aria-labelledby="code-title">
+      <div class="code-section__head">
+        <p class="eyebrow eyebrow--orange">Touchdown · taste it</p>
+        <h2 id="code-title" class="section-title">A familiar look. A very different engine.</h2>
+      </div>
+
+      <div class="code-grid">
+        <figure class="code-block code-block--raised">
+          <figcaption class="code-block__head"><span>app/jobs/send_email_job.rb</span><span class="code-block__lang">Cosmo::Job</span></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">SendEmailJob</span>
+  <span class="tok-k">include</span> <span class="tok-c">Cosmo</span>::<span class="tok-c">Job</span>
+  <span class="tok-m">options</span> <span class="tok-s">stream:</span> <span class="tok-s">:default</span>, <span class="tok-s">retry:</span> <span class="tok-l">3</span>, <span class="tok-s">dead:</span> <span class="tok-k">true</span>
+
+  <span class="tok-k">def</span> <span class="tok-m">perform</span>(user_id, template)
+    <span class="tok-c">EmailService</span>.<span class="tok-m">send</span>(user_id, template)
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span>
+
+<span class="tok-c">SendEmailJob</span>.<span class="tok-m">perform_async</span>(<span class="tok-l">123</span>, <span class="tok-l">"welcome"</span>)
+<span class="tok-c">SendEmailJob</span>.<span class="tok-m">perform_in</span>(<span class="tok-l">1</span>.<span class="tok-m">day</span>, <span class="tok-l">123</span>, <span class="tok-l">"followup"</span>)</code></pre>
+        </figure>
+
+        <figure class="code-block code-block--raised">
+          <figcaption class="code-block__head"><span>app/streams/clicks_processor.rb</span><span class="code-block__lang">Cosmo::Stream</span></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">ClicksProcessor</span>
+  <span class="tok-k">include</span> <span class="tok-c">Cosmo</span>::<span class="tok-c">Stream</span>
+  <span class="tok-m">options</span> <span class="tok-s">stream:</span> <span class="tok-s">:clickstream</span>, <span class="tok-s">batch_size:</span> <span class="tok-l">100</span>,
+          <span class="tok-s">consumer:</span> { <span class="tok-s">subjects:</span> [<span class="tok-l">"events.clicks.&gt;"</span>] }
+
+  <span class="tok-k">def</span> <span class="tok-m">process_one</span>
+    <span class="tok-c">Analytics</span>.<span class="tok-m">track</span>(message.<span class="tok-m">data</span>)
+    message.<span class="tok-m">ack</span>
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span></code></pre>
+        </figure>
+      </div>
+
+      <ul class="install-list">
+        <li class="install-row">
+          <span class="install-row__label">Gemfile</span>
+          <code class="install-row__cmd">gem "cosmonats"</code>
+          <button class="copy-btn" type="button" data-copy='gem "cosmonats"'>copy</button>
+        </li>
+        <li class="install-row">
+          <span class="install-row__label">NATS</span>
+          <code class="install-row__cmd">docker run -p 4222:4222 -p 8222:8222 nats:alpine -js</code>
+          <button class="copy-btn" type="button" data-copy="docker run -p 4222:4222 -p 8222:8222 nats:alpine -js">copy</button>
+        </li>
+        <li class="install-row">
+          <span class="install-row__label">Launch</span>
+          <code class="install-row__cmd">bundle exec cosmo -C config/cosmo.yml -c 20</code>
+          <button class="copy-btn" type="button" data-copy="bundle exec cosmo -C config/cosmo.yml -c 20">copy</button>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ===================== About bitsbeam ===================== -->
+    <section id="bitsbeam" class="container about" aria-labelledby="about-title">
+      <div class="about__copy">
+        <p class="eyebrow">Why “bitsbeam”?</p>
+        <h2 id="about-title" class="section-title">The UFO never drops the cow.</h2>
+        <p class="about__text">A flying saucer beams the cow up whole — nothing lost on the way. That's how we treat your data: every bit, beamed from where it is to where it needs to be. Cosmonats is the first craft in our fleet.</p>
+      </div>
+      <div class="panel bits-panel">
+        <div class="bits-panel__bits">01100011 01101111 01110111 00100000 01100010 01100101 01100001 01101101 01100101 01100100 00100000 01110101 01110000 00100000 01110011 01100001 01100110 01100101 01101100 01111001</div>
+        <div class="bits-panel__foot">
+          <span>🐄 → 01100011 01101111 01110111</span>
+          <span class="bits-panel__caption">“cow”, in transit</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== Footer ===================== -->
+  <footer class="site-footer">
+    <span>© 2026 bitsbeam · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="#top">Back to orbit ↑</a>
+    </nav>
+  </footer>
+</body>
+</html>

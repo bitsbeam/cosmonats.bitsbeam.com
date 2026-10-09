@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cron without a cron box — Cosmonats</title>
+  <meta name="description" content="Recurring jobs usually mean one more process to babysit. In Cosmonats, a schedule is just a message parked in NATS — and NATS keeps the time.">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body>
+  <canvas class="starfield" data-starfield data-density="0.75" data-parallax="0.2" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html#blog">← all transmissions</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main>
+    <header class="post-header">
+      <div class="post-meta">
+        <span class="post-meta__accent">Transmission #002</span>
+        <span>Engineering</span>
+        <time datetime="2026-10-08">Oct 8, 2026</time>
+        <span>4 min read</span>
+      </div>
+      <h1 class="post-title">Cron without a cron box</h1>
+      <p class="post-lede">Recurring jobs usually mean one more process to babysit. In Cosmonats, a schedule is just a message parked in NATS — and NATS keeps the time.</p>
+      <div class="byline">
+        <div class="byline__avatar"><img src="../assets/img/logo.svg" alt=""></div>
+        <div class="byline__text">
+          <span class="byline__name">The bitsbeam crew</span>
+          <span class="byline__role">mission control, earth</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker__line">0 9 * * 1-5 · @daily · 0 0 * * * · @hourly · */15 * * * * · 0 9 * * 1-5 · @daily · 0 0 * * * · @hourly · */15 * * * *</div>
+    </div>
+
+    <article class="post-body">
+      <p>Every app grows a few jobs that run on a clock: the nightly report, the weekday digest, the hourly cleanup. The usual answer is a separate scheduler process — followed by a debate about which box runs it, and what happens when that box goes dark.</p>
+
+      <h2>A schedule is just a message</h2>
+      <p>Since NATS Server 2.14, a stream can hold scheduled messages. Cosmonats parks every cron entry in a dedicated <code class="inline">scheduled</code> stream. NATS fires it on the cron expression, and a worker's scheduler dispatches the job onward — the same path a delayed job already takes.</p>
+
+      <aside class="panel crew-note">
+        <span class="crew-note__label">Crew note</span>
+        <p class="crew-note__text">Whatever's in NATS is exactly what runs — and exactly what you see in the web UI.</p>
+      </aside>
+
+      <h2>Declare it next to your streams</h2>
+      <figure class="code-block">
+        <figcaption class="code-block__head"><span>config/cosmo.yml</span><span class="code-block__lang">yaml</span></figcaption>
+<pre><code><span class="tok-s">setup:</span>
+  <span class="tok-s">cron:</span>
+    <span class="tok-c">daily_report:</span>
+      <span class="tok-s">class:</span> <span class="tok-c">ReportJob</span>
+      <span class="tok-s">schedule:</span> <span class="tok-l">"@daily"</span>
+      <span class="tok-s">stream:</span> default
+    <span class="tok-c">weekday_digest:</span>
+      <span class="tok-s">class:</span> <span class="tok-c">ReportJob</span>
+      <span class="tok-s">schedule:</span> <span class="tok-l">"0 9 * * 1-5"</span>
+      <span class="tok-s">stream:</span> default
+      <span class="tok-s">args:</span> [<span class="tok-l">"daily"</span>]
+      <span class="tok-s">timezone:</span> America/New_York</code></pre>
+      </figure>
+      <p>Run <code class="inline">cosmo -C config/cosmo.yml -S</code> and it syncs — whatever's in the file is what ends up scheduled, the same way streams are set up. Five-field UNIX cron is normalized for you; @-shortcuts pass straight through.</p>
+
+      <h2>Or steer it live</h2>
+      <p>The web UI's Crons tab lists every deployed schedule, with run-now and delete. The same controls are available from Ruby:</p>
+      <figure class="code-block">
+        <figcaption class="code-block__head"><span>console</span><span class="code-block__lang">ruby</span></figcaption>
+<pre><code><span class="tok-c">Cosmo</span>::<span class="tok-c">API</span>::<span class="tok-c">Cron</span>.<span class="tok-m">instance</span>.<span class="tok-m">upsert!</span>(
+  <span class="tok-s">class_name:</span> <span class="tok-l">"ReportJob"</span>, <span class="tok-s">stream:</span> <span class="tok-l">"default"</span>,
+  <span class="tok-s">schedule:</span> <span class="tok-l">"0 9 * * 1-5"</span>, <span class="tok-s">name:</span> <span class="tok-l">"weekday_report"</span>
+)
+
+<span class="tok-c">Cosmo</span>::<span class="tok-c">API</span>::<span class="tok-c">Cron</span>.<span class="tok-m">instance</span>.<span class="tok-m">all</span></code></pre>
+      </figure>
+
+      <h2>One thing to remember</h2>
+      <p>Cron firings are dispatched by the scheduler, so keep at least one worker running without <code class="inline">--no-scheduler</code>. That's the whole checklist — no extra box, no leader election, no second config.</p>
+    </article>
+
+    <nav class="post-pager" aria-label="More posts">
+      <a class="pager-card" href="why-we-beamed-off-redis.html">
+        <span class="pager-card__label">← Older · #001</span>
+        <span class="pager-card__title">Why we beamed our background jobs off Redis</span>
+      </a>
+      <a class="pager-card pager-card--primary" href="../index.html#journey">
+        <span class="pager-card__label">Latest transmission · up next</span>
+        <span class="pager-card__title">Take the full mission tour →</span>
+      </a>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <span>© 2026 bitsbeam · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

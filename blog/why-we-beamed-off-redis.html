@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Why we beamed our background jobs off Redis — Cosmonats</title>
+  <meta name="description" content="Redis is a brilliant key-value store that learned to queue. NATS is a messaging system that learned to store. That difference is the whole reason Cosmonats exists.">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body>
+  <canvas class="starfield" data-starfield data-density="0.75" data-parallax="0.2" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html#blog">← all transmissions</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main>
+    <header class="post-header">
+      <div class="post-meta">
+        <span class="post-meta__accent">Transmission #001</span>
+        <span>Engineering</span>
+        <time datetime="2026-09-24">Sep 24, 2026</time>
+        <span>6 min read</span>
+      </div>
+      <h1 class="post-title">Why we beamed our background jobs off Redis</h1>
+      <p class="post-lede">Redis is a brilliant key-value store that learned to queue. NATS is a messaging system that learned to store. That difference is the whole reason Cosmonats exists.</p>
+      <div class="byline">
+        <div class="byline__avatar"><img src="../assets/img/logo.svg" alt=""></div>
+        <div class="byline__text">
+          <span class="byline__name">The bitsbeam crew</span>
+          <span class="byline__role">mission control, earth</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker__line">01100011 01101111 01110111 00100000 01100010 01100101 01100001 01101101 01100101 01100100 00100000 01110101 01110000 00100000 01110011 01100001 01100110 01100101 01101100 01111001</div>
+    </div>
+
+    <article class="post-body">
+      <p>Every Ruby team eventually needs work to happen <em>later</em>: send the email, resize the image, sync the account. And almost every Ruby team reaches for the same answer — put a queue in Redis, or poll a table in Postgres.</p>
+      <p>Both work. Both are also tools that were never designed to be message brokers. We kept running into the edges: memory that has to fit the whole backlog, scaling that only goes up, and a quiet fear that a restart at the wrong moment drops something on the floor.</p>
+
+      <h2>Messaging first, storage second</h2>
+      <p>NATS flips the priorities. It is a ~20 MB binary that idles at around 10 MB of RAM, persists streams to disk, and clusters horizontally out of the box. Lose a node and the others take over — no message loss, no sentinel dance.</p>
+
+      <aside class="panel crew-note">
+        <span class="crew-note__label">Crew note</span>
+        <p class="crew-note__text">One NATS server replaces your message broker, your job queue and your KV store.</p>
+      </aside>
+
+      <h2>One gem, two primitives</h2>
+      <p>Most job libraries stop at jobs. If you also need to consume a continuous event feed, that's a second system, a second config and a second fleet of workers. Cosmonats ships both as first-class citizens, sharing one server, one config and one CLI.</p>
+
+      <figure class="code-block">
+        <figcaption class="code-block__head"><span>app/jobs/report_job.rb</span><span class="code-block__lang">ruby</span></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">ReportJob</span>
+  <span class="tok-k">include</span> <span class="tok-c">Cosmo</span>::<span class="tok-c">Job</span>
+  <span class="tok-m">options</span> <span class="tok-s">stream:</span> <span class="tok-s">:critical</span>, <span class="tok-s">retry:</span> <span class="tok-l">5</span>, <span class="tok-s">dead:</span> <span class="tok-k">true</span>
+
+  <span class="tok-k">def</span> <span class="tok-m">perform</span>(report_id)
+    <span class="tok-c">Report</span>.<span class="tok-m">find</span>(report_id).<span class="tok-m">generate!</span>
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span>
+
+<span class="tok-c">ReportJob</span>.<span class="tok-m">perform_in</span>(<span class="tok-l">30</span>.<span class="tok-m">minutes</span>, <span class="tok-l">42</span>)</code></pre>
+      </figure>
+
+      <h2>Time travel is a feature</h2>
+      <p>Because messages live on disk, any consumer can rewind — to the beginning of time, to a timestamp, or only to new messages. Pipeline down for three hours? Replay from the crash. New service needs history? Start it from the first message. Weird production bug? Replay the exact sequence that caused it.</p>
+
+      <div class="table-wrap">
+        <table class="compare">
+          <thead>
+            <tr><th scope="col"><span class="visually-hidden">Feature</span></th><th scope="col">Redis / DB</th><th scope="col">NATS / Cosmonats</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Persistence</th><td>In-memory / DB bloat</td><td>Disk-backed, TB-scale</td></tr>
+            <tr><th scope="row">Scaling</th><td>Vertical / Sentinel</td><td>Horizontal clustering</td></tr>
+            <tr><th scope="row">Real-time streams</th><td>No</td><td>Yes</td></tr>
+            <tr><th scope="row">Message replay</th><td>No</td><td>Yes</td></tr>
+            <tr><th scope="row">Backpressure</th><td>Grows unbounded</td><td>Yes</td></tr>
+            <tr><th scope="row">Multi-DC</th><td>Complex setup</td><td>Native</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>The UFO never drops the cow</h2>
+      <p>That's the bitsbeam idea in one picture: the cow goes up whole, or it doesn't go at all. Cosmonats is our first craft built on that promise — tens of millions of jobs processed in production, and counting. More transmissions soon.</p>
+    </article>
+
+    <nav class="post-pager" aria-label="More posts">
+      <a class="pager-card" href="../index.html#blog">
+        <span class="pager-card__label">← First transmission</span>
+        <span class="pager-card__title">All transmissions</span>
+      </a>
+      <a class="pager-card pager-card--primary" href="cron-without-a-cron-box.html">
+        <span class="pager-card__label">Newer · #002 →</span>
+        <span class="pager-card__title">Cron without a cron box</span>
+      </a>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <span>© 2026 bitsbeam · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>
