@@ -60,13 +60,22 @@
               <stop offset="0" stop-color="#ffb15a" stop-opacity="0.55"/>
               <stop offset="1" stop-color="#ffb15a" stop-opacity="0"/>
             </linearGradient>
+            <clipPath id="planetRingFront">
+              <rect x="260" y="92" width="128" height="24"/>
+            </clipPath>
           </defs>
           <path d="M30 440 Q110 190 372 52" fill="none" stroke="#2b3658" stroke-width="2.5" stroke-dasharray="2 10" stroke-linecap="round"/>
           <g class="rocket-scene__planet">
+            <g transform="rotate(-16 324 92)">
+              <ellipse cx="324" cy="92" rx="56" ry="13" fill="none" stroke="#0b0f1e" stroke-width="8"/>
+              <ellipse cx="324" cy="92" rx="56" ry="13" fill="none" stroke="#ffb15a" stroke-width="3.5"/>
+            </g>
             <circle cx="324" cy="92" r="30" fill="#e2524a" stroke="#0b0f1e" stroke-width="4"/>
             <path d="M306 78 Q312 70 322 69" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6"/>
-            <ellipse cx="324" cy="92" rx="56" ry="13" fill="none" stroke="#0b0f1e" stroke-width="8" transform="rotate(-16 324 92)"/>
-            <ellipse cx="324" cy="92" rx="56" ry="13" fill="none" stroke="#ffb15a" stroke-width="3.5" transform="rotate(-16 324 92)"/>
+            <g transform="rotate(-16 324 92)" clip-path="url(#planetRingFront)">
+              <ellipse cx="324" cy="92" rx="56" ry="13" fill="none" stroke="#0b0f1e" stroke-width="8"/>
+              <ellipse cx="324" cy="92" rx="56" ry="13" fill="none" stroke="#ffb15a" stroke-width="3.5"/>
+            </g>
           </g>
           <circle cx="68" cy="128" r="11" fill="#c9cfdc" stroke="#0b0f1e" stroke-width="3"/>
           <circle cx="64" cy="125" r="2.5" fill="#6d7894"/>
