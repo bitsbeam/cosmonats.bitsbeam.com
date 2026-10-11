@@ -600,7 +600,7 @@ code.inline {
   gap: 14px;
   align-items: center;
 }
-.journey__map { position: relative; }
+.journey__map { position: relative; max-width: var(--container); margin: 0 auto; }
 .journey__svg { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
 .journey__track { fill: none; stroke: var(--color-line-2); stroke-width: 2.5; stroke-dasharray: 2 10; stroke-linecap: round; }
 .journey__trail { fill: none; stroke: var(--color-cyan); stroke-width: 3; stroke-linecap: round; opacity: .9; }
