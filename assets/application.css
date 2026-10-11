@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Cosmonats — application.css
+   Cosmonats / bitsbeam — application.css
    Single stylesheet for every page. Plain CSS, no build step.
 
    Contents
@@ -7,6 +7,9 @@
      2. Components  nav, buttons, panels, code + syntax, post cards, pager, footer
      3. Home        hero + UFO scene, beam, blog teaser, journey, code, about
      4. Post        article layout, crew note, comparison table
+     5. Sites       per-site bits: cosmonats rocket hero, bitsbeam theme + fleet
+
+   Shared by cosmonats.bitsbeam.com/ and bitsbeam.com/ — keep both copies identical.
 
    Conventions
      - BEM-ish names: .block, .block__element, .block--modifier
@@ -129,6 +132,7 @@ a:hover { color: var(--color-ink); }
 @keyframes rise     { 0% { transform: translateY(55%); opacity: 0 } 15% { opacity: 1 } 80% { opacity: 1 } 100% { transform: translateY(-70%); opacity: 0 } }
 @keyframes blink    { 0%,49% { opacity: 1 } 50%,100% { opacity: .25 } }
 @keyframes flame    { 0%,100% { transform: scaleY(1) } 50% { transform: scaleY(1.4) } }
+@keyframes puff     { 0%,100% { transform: scale(.86) } 50% { transform: scale(1.08) } }
 @keyframes hint     { 0%,100% { transform: translateY(0) } 50% { transform: translateY(7px) } }
 
 .anim-blink { animation: blink 1.2s infinite; }
@@ -596,7 +600,7 @@ code.inline {
   gap: 14px;
   align-items: center;
 }
-.journey__map { position: relative; max-width: var(--container); margin: 0 auto; }
+.journey__map { position: relative; }
 .journey__svg { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
 .journey__track { fill: none; stroke: var(--color-line-2); stroke-width: 2.5; stroke-dasharray: 2 10; stroke-linecap: round; }
 .journey__trail { fill: none; stroke: var(--color-cyan); stroke-width: 3; stroke-linecap: round; opacity: .9; }
@@ -881,3 +885,73 @@ code.inline {
 .compare tbody td:nth-child(2) { color: var(--color-muted); }
 .compare tbody td:last-child { color: var(--color-ink); }
 .compare tbody tr:last-child > * { border-bottom: 0; }
+
+
+/* 5. Sites ================================================================= */
+
+/* Cosmonats: rocket lifting off (hero art) -------------------------------- */
+.rocket-scene {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  justify-self: center;
+  aspect-ratio: 400 / 480;
+}
+.rocket-scene svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.rocket-scene__rocket { animation: bob 2.6s ease-in-out infinite; }
+.rocket-scene__flame { transform-box: fill-box; transform-origin: 50% 0; animation: flame .18s ease-in-out infinite; }
+.rocket-scene__puff { transform-box: fill-box; transform-origin: center; animation: puff 2.4s ease-in-out infinite; }
+.rocket-scene__planet { animation: bob 7s ease-in-out infinite; }
+
+/* bitsbeam: alien-green accent. <body data-theme="bitsbeam"> ------------- */
+/* --color-cyan is the site accent; the theme just swaps its value. */
+[data-theme="bitsbeam"] {
+  --color-cyan: oklch(0.86 0.17 138);
+  --color-bits: #dcffcf;
+}
+
+/* bitsbeam: no blur on the beam digits — they glow hot instead */
+[data-theme="bitsbeam"] .beam { filter: none; opacity: 0.6; }
+[data-theme="bitsbeam"] .beam__bits {
+  color: #cfeec2;
+  font-weight: 600;
+  text-shadow:
+    0 0 4px oklch(0.86 0.17 138 / 0.55),
+    0 0 12px oklch(0.78 0.16 55 / 0.3);
+}
+
+/* bitsbeam: fleet --------------------------------------------------------- */
+.fleet {
+  padding-top: 100px;
+  padding-bottom: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.fleet .post-feature__emblem { gap: 14px; }
+.fleet .post-feature__emblem img { width: clamp(96px, 12vw, 140px); height: auto; }
+
+/* bitsbeam: fleet grid (one card per product, --craft = its own accent) */
+.fleet .post-list__label { margin-top: 12px; }
+.fleet .post-list__label a { color: var(--color-cyan); }
+.fleet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; }
+.craft-card {
+  --craft: var(--color-cyan);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px 26px 24px;
+  background: var(--color-panel);
+  color: var(--color-ink);
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  transition: transform .2s, box-shadow .2s;
+}
+.craft-card:hover { color: var(--color-ink); transform: translate(-3px, -3px); box-shadow: 11px 11px 0 var(--craft); }
+.craft-card__logo { width: 72px; height: 72px; margin-bottom: 6px; }
+.craft-card .post-meta__accent { color: var(--craft); }
+.craft-card__title { font-size: clamp(28px, 3vw, 36px); line-height: 1; font-weight: 800; letter-spacing: -0.03em; }
+.craft-card__kicker { font-family: var(--font-mono); font-size: 13px; color: var(--craft); }
+.craft-card__desc { font-size: 16px; line-height: 1.5; color: var(--color-soft); text-wrap: pretty; flex: 1; }
+.craft-card__more { font-family: var(--font-mono); font-size: 13px; color: var(--craft); }

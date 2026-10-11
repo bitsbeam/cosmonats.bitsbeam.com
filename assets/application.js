@@ -1,5 +1,6 @@
 /**
- * Cosmonats — application.js
+ * Cosmonats / bitsbeam — application.js
+ * Shared by cosmonats.bitsbeam.com/ and bitsbeam.com/ — keep both copies identical.
  * Single script for every page. Plain ES2017, no build step, no dependencies.
  * Loaded with `defer`, so the DOM is ready when it runs.
  *

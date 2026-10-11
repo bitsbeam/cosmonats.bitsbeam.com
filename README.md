@@ -2,13 +2,14 @@
 
 Marketing site + blog for [Cosmonats](https://github.com/bitsbeam/cosmonats) by bitsbeam.
 Plain static HTML / CSS / JS — no build step, no dependencies.
+The company site lives next door in `../bitsbeam.com/` and shares `assets/application.css` + `application.js` —
+keep both copies identical.
 
 ## Structure
 
 ```
 /
-├── index.html                      # home: hero, blog teaser, journey, code, about
-├── about.html                      # about bitsbeam
+├── index.html                      # home: rocket hero, blog teaser, journey, code
 ├── blog/
 │   ├── cron-without-a-cron-box.html    # #002 (hidden: unlisted, noindex)
 │   └── why-we-beamed-off-redis.html    # #001 (latest)

@@ -31,7 +31,7 @@
       <a href="#blog">blog</a>
       <a class="nav-secondary" href="#journey">journey</a>
       <a class="nav-secondary" href="#code">code</a>
-      <a class="nav-secondary" href="#bitsbeam">bitsbeam</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
       <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
     </nav>
   </header>
@@ -52,71 +52,48 @@
         </div>
       </div>
 
-      <!-- UFO abducting a cow; the beam carries the cow as 0101 data -->
-      <figure class="ufo-scene" aria-hidden="true">
-        <div class="beam" data-beam data-columns="11"></div>
-
-        <svg class="ufo-scene__layer" viewBox="0 0 400 480">
+      <!-- Rocket lifting off the pad -->
+      <figure class="rocket-scene" aria-hidden="true">
+        <svg viewBox="0 0 400 480">
           <defs>
-            <linearGradient id="beamGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#7fe3ff" stop-opacity="0.7"/>
-              <stop offset="1" stop-color="#7fe3ff" stop-opacity="0.04"/>
+            <linearGradient id="exhaustGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffb15a" stop-opacity="0.55"/>
+              <stop offset="1" stop-color="#ffb15a" stop-opacity="0"/>
             </linearGradient>
           </defs>
-          <path d="M-40 490 Q200 400 440 490 Z" fill="#101a33"/>
-          <circle cx="96" cy="462" r="9" fill="#0a1226"/>
-          <circle cx="310" cy="455" r="6" fill="#0a1226"/>
-          <g class="ufo-scene__ufo">
-            <polygon points="160,128 240,128 340,430 60,430" fill="url(#beamGradient)"/>
-            <path d="M140 94 C140 36 260 36 260 94 Z" fill="#9fe6ff" fill-opacity="0.85" stroke="#0b0f1e" stroke-width="4"/>
-            <circle cx="200" cy="74" r="15" fill="#8fe36f" stroke="#0b0f1e" stroke-width="3"/>
-            <ellipse cx="194" cy="72" rx="3.5" ry="5" fill="#0b0f1e"/>
-            <ellipse cx="206" cy="72" rx="3.5" ry="5" fill="#0b0f1e"/>
-            <ellipse cx="200" cy="102" rx="152" ry="34" fill="#c9cfdc" stroke="#0b0f1e" stroke-width="4"/>
-            <ellipse cx="200" cy="116" rx="96" ry="17" fill="#6d7894" stroke="#0b0f1e" stroke-width="4"/>
-            <ellipse cx="200" cy="126" rx="40" ry="8" fill="#7fe3ff" stroke="#0b0f1e" stroke-width="3"/>
-            <circle class="anim-blink" cx="78" cy="102" r="6" fill="#ffb15a" stroke="#0b0f1e" stroke-width="2.5"/>
-            <circle class="anim-blink delay-1" cx="118" cy="110" r="6" fill="#7fe3ff" stroke="#0b0f1e" stroke-width="2.5"/>
-            <circle class="anim-blink delay-2" cx="282" cy="110" r="6" fill="#7fe3ff" stroke="#0b0f1e" stroke-width="2.5"/>
-            <circle class="anim-blink delay-3" cx="322" cy="102" r="6" fill="#ffb15a" stroke="#0b0f1e" stroke-width="2.5"/>
+          <path d="M30 440 Q110 190 372 52" fill="none" stroke="#2b3658" stroke-width="2.5" stroke-dasharray="2 10" stroke-linecap="round"/>
+          <g class="rocket-scene__planet">
+            <circle cx="324" cy="92" r="30" fill="#e2524a" stroke="#0b0f1e" stroke-width="4"/>
+            <path d="M306 78 Q312 70 322 69" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6"/>
+            <ellipse cx="324" cy="92" rx="56" ry="13" fill="none" stroke="#0b0f1e" stroke-width="8" transform="rotate(-16 324 92)"/>
+            <ellipse cx="324" cy="92" rx="56" ry="13" fill="none" stroke="#ffb15a" stroke-width="3.5" transform="rotate(-16 324 92)"/>
           </g>
-        </svg>
-
-        <svg class="ufo-scene__layer ufo-scene__layer--front" viewBox="0 0 400 480">
-          <g class="ufo-scene__cow">
-            <!-- far legs -->
-            <rect x="158" y="310" width="13" height="36" rx="5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
-            <rect x="180" y="310" width="13" height="40" rx="5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
-            <rect x="222" y="310" width="13" height="38" rx="5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
-            <rect x="244" y="310" width="13" height="34" rx="5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
-            <!-- tail -->
-            <path d="M150 290 Q126 300 134 328" stroke="#0b0f1e" stroke-width="4" fill="none" stroke-linecap="round"/>
-            <circle cx="134" cy="330" r="6" fill="#0b0f1e"/>
-            <!-- body + spots -->
-            <rect x="146" y="266" width="122" height="60" rx="30" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="4"/>
-            <ellipse cx="180" cy="284" rx="17" ry="11" fill="#0b0f1e"/>
-            <ellipse cx="234" cy="306" rx="13" ry="9" fill="#0b0f1e"/>
-            <ellipse cx="212" cy="277" rx="8" ry="6" fill="#0b0f1e"/>
-            <!-- udder -->
-            <rect x="189.75" y="334" width="3.5" height="7" rx="1.75" fill="#e88aa0" stroke="#0b0f1e" stroke-width="2"/>
-            <rect x="195.25" y="335" width="3.5" height="7.5" rx="1.75" fill="#e88aa0" stroke="#0b0f1e" stroke-width="2"/>
-            <rect x="200.75" y="334" width="3.5" height="7" rx="1.75" fill="#e88aa0" stroke="#0b0f1e" stroke-width="2"/>
-            <path d="M185 323 C184.5 333 191 337 197 337 C203 337 209.5 333 209 323 Z" fill="#f3a6b8" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
-            <path d="M189 328 Q191.5 333 196 334" stroke="#ffffff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.6"/>
-            <!-- near legs (in front of udder) -->
-            <path d="M180 320 L180 345 Q180 350 186.5 350 Q193 350 193 345 L193 320" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
-            <path d="M222 320 L222 343 Q222 348 228.5 348 Q235 348 235 343 L235 320" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
-            <!-- horns, ears, head -->
-            <path d="M261 252 Q254 234 266 236" stroke="#0b0f1e" stroke-width="4" fill="none" stroke-linecap="round"/>
-            <path d="M293 252 Q300 234 288 236" stroke="#0b0f1e" stroke-width="4" fill="none" stroke-linecap="round"/>
-            <ellipse cx="250" cy="258" rx="11" ry="5.5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
-            <ellipse cx="304" cy="258" rx="11" ry="5.5" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
-            <rect x="252" y="246" width="50" height="44" rx="18" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="4"/>
-            <rect x="258" y="272" width="38" height="20" rx="10" fill="#f3a6b8" stroke="#0b0f1e" stroke-width="3"/>
-            <circle cx="269" cy="282" r="2.6" fill="#0b0f1e"/>
-            <circle cx="285" cy="282" r="2.6" fill="#0b0f1e"/>
-            <circle cx="267" cy="261" r="4" fill="#0b0f1e"/>
-            <circle cx="287" cy="261" r="4" fill="#0b0f1e"/>
+          <circle cx="68" cy="128" r="11" fill="#c9cfdc" stroke="#0b0f1e" stroke-width="3"/>
+          <circle cx="64" cy="125" r="2.5" fill="#6d7894"/>
+          <path d="M-40 490 Q200 410 440 490 Z" fill="#101a33"/>
+          <polygon points="178,352 222,352 246,424 154,424" fill="url(#exhaustGradient)"/>
+          <rect x="146" y="420" width="108" height="14" rx="5" fill="#6d7894" stroke="#0b0f1e" stroke-width="3"/>
+          <g class="rocket-scene__puffs">
+            <circle class="rocket-scene__puff" cx="126" cy="428" r="16" fill="#c9cfdc" stroke="#0b0f1e" stroke-width="3" style="animation-delay:-1.6s"/>
+            <circle class="rocket-scene__puff" cx="274" cy="428" r="16" fill="#c9cfdc" stroke="#0b0f1e" stroke-width="3" style="animation-delay:-0.4s"/>
+            <circle class="rocket-scene__puff" cx="158" cy="416" r="22" fill="#e4e7ee" stroke="#0b0f1e" stroke-width="3" style="animation-delay:-1.2s"/>
+            <circle class="rocket-scene__puff" cx="242" cy="416" r="22" fill="#e4e7ee" stroke="#0b0f1e" stroke-width="3" style="animation-delay:-0.8s"/>
+            <circle class="rocket-scene__puff" cx="200" cy="424" r="26" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3"/>
+          </g>
+          <g class="rocket-scene__rocket">
+            <g transform="translate(128 74) scale(2.4)">
+              <g class="rocket-scene__flame">
+                <path d="M19 84 Q30 120 41 84 Z" fill="#ff8a3d" stroke="#0b0f1e" stroke-width="1.6"/>
+                <path d="M24 84 Q30 106 36 84 Z" fill="#ffe27a"/>
+              </g>
+              <path d="M18 58 L3 86 L19 80 Z" fill="#e2524a" stroke="#0b0f1e" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M42 58 L57 86 L41 80 Z" fill="#e2524a" stroke="#0b0f1e" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M30 3 C45 17 47 50 42 84 L18 84 C13 50 15 17 30 3 Z" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M30 3 C37 10 40 17 41.5 24 L18.5 24 C20 17 23 10 30 3 Z" fill="#e2524a" stroke="#0b0f1e" stroke-width="1.8" stroke-linejoin="round"/>
+              <circle cx="30" cy="44" r="8.5" fill="#7fe3ff" stroke="#0b0f1e" stroke-width="1.8"/>
+              <path d="M26 41 Q28 38 31 38" stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+              <rect x="27.5" y="64" width="5" height="22" rx="2" fill="#e2524a" stroke="#0b0f1e" stroke-width="1.5"/>
+            </g>
           </g>
         </svg>
       </figure>
@@ -326,29 +303,11 @@
       </ul>
     </section>
 
-    <!-- ===================== About bitsbeam ===================== -->
-    <section id="bitsbeam" class="container about" aria-labelledby="about-title">
-      <div class="about__copy">
-        <p class="eyebrow">Why “bitsbeam”?</p>
-        <h2 id="about-title" class="section-title">The UFO never drops the cow.</h2>
-        <p class="about__text">A flying saucer beams the cow up whole — nothing lost on the way. That's how data is treated: every bit, beamed from where it is to where it needs to be. Cosmonats is the first craft in our fleet.</p>
-        <div class="hero__actions">
-          <a class="btn btn--primary" href="about.html">About →</a>
-        </div>
-      </div>
-      <div class="panel bits-panel">
-        <div class="bits-panel__bits">01100011 01101111 01110111 00100000 01100010 01100101 01100001 01101101 01100101 01100100 00100000 01110101 01110000 00100000 01110011 01100001 01100110 01100101 01101100 01111001</div>
-        <div class="bits-panel__foot">
-          <span>🐄 → 01100011 01101111 01110111</span>
-          <span class="bits-panel__caption">“cow”, in transit</span>
-        </div>
-      </div>
-    </section>
   </main>
 
   <!-- ===================== Footer ===================== -->
   <footer class="site-footer">
-    <span>© 2026 bitsbeam · cosmonats is MIT licensed</span>
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
     <nav class="site-footer__links" aria-label="Footer">
       <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
       <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
