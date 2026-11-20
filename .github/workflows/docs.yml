@@ -1,0 +1,76 @@
+name: Docs
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "cosmonats tag, branch or commit to build (default: the latest release)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch cosmonats
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init projects/cosmonats
+          git -C projects/cosmonats fetch --tags --force origin '+refs/heads/*:refs/remotes/origin/*'
+
+      - name: Pick the ref
+        id: ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_REF: ${{ inputs.ref }}
+        run: |
+          if [ -n "$INPUT_REF" ]; then
+            ref="$INPUT_REF"
+            git -C projects/cosmonats rev-parse --verify --quiet "origin/$ref" > /dev/null && ref="origin/$ref"
+          else
+            ref=$(gh release view --repo bitsbeam/cosmonats --json tagName --jq .tagName)
+            if git -C projects/cosmonats merge-base --is-ancestor "$ref" HEAD; then
+              echo "The submodule already includes $ref, nothing to build."
+              exit 0
+            fi
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "name=${ref#origin/}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out ${{ steps.ref.outputs.name }}
+        if: steps.ref.outputs.ref
+        run: git -C projects/cosmonats checkout --detach "${{ steps.ref.outputs.ref }}"
+
+      - name: Set up Ruby
+        if: steps.ref.outputs.ref
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Build docs
+        if: steps.ref.outputs.ref
+        run: bundle exec rake docs
+
+      - name: Commit and push
+        if: steps.ref.outputs.ref
+        run: |
+          git add projects/cosmonats docs
+          if git diff --cached --quiet; then
+            echo "Docs are up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(docs): build docs for cosmonats ${{ steps.ref.outputs.name }}"
+          git push

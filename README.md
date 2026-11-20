@@ -49,7 +49,11 @@ git submodule update --init --remote   # pull the latest cosmonats main
 bundle exec rake docs                  # or COSMONATS=../cosmonats to build from a local checkout
 ```
 
-Commit the regenerated `docs/` with the submodule bump. Sidebar groups live in `Docs::Builder::GROUPS`
+Commit the regenerated `docs/` with the submodule bump. The **Docs** workflow (`.github/workflows/docs.yml`) does
+that daily: when the latest cosmonats release isn't in the submodule yet, it checks the submodule out at that tag,
+rebuilds, and pushes. Run it by hand with a `ref` (`main`, a tag, a commit) to publish docs fixes between releases.
+
+Sidebar groups live in `Docs::Builder::GROUPS`
 (`tools/docs/builder.rb`); a page missing from them lands under "More".
 
 ## Deploy
