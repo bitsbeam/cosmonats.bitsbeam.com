@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CLI — Cosmonats docs</title>
+  <meta name="description" content="bash cosmo -C config/cosmo.yml --setup # Create streams in NATS (idempotent) cosmo -C config/cosmo.yml -c 20 -r ./app/jobs jobs # Jobs only cosmo -C config/cosmo.yml -c 20 streams ">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">CLI</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html" class="is-active" aria-current="page">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Operations</span>
+        <h1 class="docs-title">CLI</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="cosmo -C config/cosmo.yml --setup                     # Create streams in NATS (idempotent)
+cosmo -C config/cosmo.yml -c 20 -r ./app/jobs jobs    # Jobs only
+cosmo -C config/cosmo.yml -c 20 streams               # Streams only
+cosmo -C config/cosmo.yml -c 20                       # Both
+cosmo -C config/cosmo.yml jobs --streams default,high # Jobs, limited to these streams
+cosmo -C config/cosmo.yml jobs --stream critical      # Jobs, limited to one stream
+cosmo -C config/cosmo.yml jobs --no-scheduler         # Jobs, without dispatching scheduled jobs
+COSMO_JOBS_STREAMS=default,high cosmo jobs            # Same filter, without touching the command line"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>cosmo <span class="tok-s">-C</span> config/cosmo.yml <span class="tok-s">--setup</span>                     <span class="tok-cm"># Create streams in NATS (idempotent)</span>
+cosmo <span class="tok-s">-C</span> config/cosmo.yml <span class="tok-s">-c</span> 20 <span class="tok-s">-r</span> ./app/jobs <span class="tok-m">jobs</span>    <span class="tok-cm"># Jobs only</span>
+cosmo <span class="tok-s">-C</span> config/cosmo.yml <span class="tok-s">-c</span> 20 streams               <span class="tok-cm"># Streams only</span>
+cosmo <span class="tok-s">-C</span> config/cosmo.yml <span class="tok-s">-c</span> 20                       <span class="tok-cm"># Both</span>
+cosmo <span class="tok-s">-C</span> config/cosmo.yml <span class="tok-m">jobs</span> <span class="tok-s">--streams</span> default,high <span class="tok-cm"># Jobs, limited to these streams</span>
+cosmo <span class="tok-s">-C</span> config/cosmo.yml <span class="tok-m">jobs</span> <span class="tok-s">--stream</span> critical      <span class="tok-cm"># Jobs, limited to one stream</span>
+cosmo <span class="tok-s">-C</span> config/cosmo.yml <span class="tok-m">jobs</span> <span class="tok-s">--no-scheduler</span>         <span class="tok-cm"># Jobs, without dispatching scheduled jobs</span>
+COSMO_JOBS_STREAMS=default,high cosmo <span class="tok-m">jobs</span>            <span class="tok-cm"># Same filter, without touching the command line</span></code></pre>
+</figure>
+
+<p>Each selected stream gets its own durable consumer, named <code class="inline">consumer-&lt;stream&gt;</code>. Every process that subscribes to a stream
+pulls from that same consumer, so running a dedicated fleet per stream splits the work instead of duplicating it.
+The <code class="inline">scheduled</code> stream is a service stream: it is always dispatched, and naming it in <code class="inline">--streams</code> selects nothing, use
+<code class="inline">--no-scheduler</code> on workers that should not dispatch scheduled jobs. Unknown stream names abort the process.</p>
+
+<h2 id="global-flags"><a class="docs-anchor" href="#global-flags" aria-hidden="true" tabindex="-1">#</a>Global flags</h2>
+
+<p>They go before the command.</p>
+
+<div class="table-wrap"><table class="docs-table">
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="inline">-C, --config PATH</code></td>
+      <td>Config file path</td>
+      <td><code class="inline">-C config/cosmo.yml</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">-c, --concurrency INT</code></td>
+      <td>Worker threads</td>
+      <td><code class="inline">-c 20</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">-r, --require PATH</code></td>
+      <td>Auto-require directory</td>
+      <td><code class="inline">-r ./app/jobs</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">-t, --timeout NUM</code></td>
+      <td>Shutdown timeout (sec)</td>
+      <td><code class="inline">-t 60</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">-p, --http-port INT</code></td>
+      <td>Serve <code class="inline">/health</code> and <code class="inline">/ping</code> on a port</td>
+      <td><code class="inline">-p 9090</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">-S, --setup</code></td>
+      <td>Setup streams &amp; sync cron, then exit</td>
+      <td><code class="inline">--setup</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">--no-cron</code></td>
+      <td>With <code class="inline">--setup</code>, skip syncing cron schedules</td>
+      <td><code class="inline">--setup --no-cron</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">--init</code></td>
+      <td>Write <code class="inline">config/cosmo.yml</code> with the defaults, then exit</td>
+      <td><code class="inline">--init</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">-v, --version</code></td>
+      <td>Print version and exit</td>
+      <td><code class="inline">--version</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">-h, --help</code></td>
+      <td>Show help and exit</td>
+      <td><code class="inline">--help</code></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="jobs-options"><a class="docs-anchor" href="#jobs-options" aria-hidden="true" tabindex="-1">#</a><code class="inline">jobs</code> options</h2>
+
+<div class="table-wrap"><table class="docs-table">
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="inline">--streams NAMES</code></td>
+      <td>Only subscribe to these job streams, instead of all configured ones</td>
+      <td><code class="inline">--streams default,high</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">--stream NAME</code></td>
+      <td>Same as <code class="inline">--streams</code>, for a single stream</td>
+      <td><code class="inline">--stream default</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">--[no-]scheduler</code></td>
+      <td>Dispatch scheduled jobs (default: yes)</td>
+      <td><code class="inline">--no-scheduler</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">--subject NAME</code></td>
+      <td>Job’s subject</td>
+      <td><code class="inline">--subject jobs.default.foo</code></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p><code class="inline">--streams</code>/<code class="inline">--stream</code> also read from <code class="inline">COSMO_JOBS_STREAMS</code> (comma-separated) when neither flag is given.</p>
+
+<h2 id="streams-options"><a class="docs-anchor" href="#streams-options" aria-hidden="true" tabindex="-1">#</a><code class="inline">streams</code> options</h2>
+
+<p><code class="inline">--stream</code>/<code class="inline">--subject</code>/<code class="inline">--consumer_name</code>/<code class="inline">--batch_size</code> apply only when running a single processor; ignored once <code class="inline">--processors</code> selects more than one.</p>
+
+<div class="table-wrap"><table class="docs-table">
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="inline">--processors NAMES</code></td>
+      <td>Only run these stream processor classes</td>
+      <td><code class="inline">--processors OrderProcessor</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">--stream NAME</code></td>
+      <td>Stream name</td>
+      <td><code class="inline">--stream orders</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">--subject NAME</code></td>
+      <td>Subject name</td>
+      <td><code class="inline">--subject orders.created</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">--consumer_name NAME</code></td>
+      <td>Consumer name</td>
+      <td><code class="inline">--consumer_name orders-consumer</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">--batch_size NUM</code></td>
+      <td>Messages per fetch batch</td>
+      <td><code class="inline">--batch_size 50</code></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="signals"><a class="docs-anchor" href="#signals" aria-hidden="true" tabindex="-1">#</a>Signals</h2>
+
+<div class="table-wrap"><table class="docs-table">
+  <thead>
+    <tr>
+      <th>Signal</th>
+      <th>Effect</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="inline">INT</code>, <code class="inline">TERM</code></td>
+      <td>Graceful shutdown: stop fetching, wait up to <code class="inline">--timeout</code> seconds for in-flight work, exit</td>
+    </tr>
+    <tr>
+      <td><code class="inline">TSTP</code></td>
+      <td>Quiet: stop fetching new work, keep running in-flight work</td>
+    </tr>
+    <tr>
+      <td><code class="inline">CONT</code></td>
+      <td>Resume fetching after <code class="inline">TSTP</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">USR1</code></td>
+      <td>Quiet, then exit once in-flight work drains</td>
+    </tr>
+    <tr>
+      <td><code class="inline">TTIN</code></td>
+      <td>Log every thread’s backtrace at <code class="inline">WARN</code>, tagged with the same <code class="inline">tid</code> as regular log lines</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="kill -TSTP &lt;pid&gt;  # before a deploy: let the old worker finish what it has
+kill -TTIN &lt;pid&gt;  # a worker looks stuck: see what each thread is doing"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-m">kill</span> <span class="tok-s">-TSTP</span> &lt;pid&gt;  <span class="tok-cm"># before a deploy: let the old worker finish what it has</span>
+<span class="tok-m">kill</span> <span class="tok-s">-TTIN</span> &lt;pid&gt;  <span class="tok-cm"># a worker looks stuck: see what each thread is doing</span></code></pre>
+</figure>
+
+<p>The worker’s state (<code class="inline">running</code>, <code class="inline">quiet</code>, <code class="inline">stopping</code>) is shown on the web UI’s Processes list.</p>
+
+<h2 id="health-check"><a class="docs-anchor" href="#health-check" aria-hidden="true" tabindex="-1">#</a>Health check</h2>
+
+<p>Pass <code class="inline">-p/--http-port</code> (or set <code class="inline">http.port</code> in the config) to start a small WEBrick HTTP server alongside the workers.
+It needs the optional <code class="inline">rack</code> and <code class="inline">webrick</code> gems (see <a href="installation.html">Installation</a>); without a port they’re never loaded.</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">yaml</span><button class="copy-btn" type="button" data-copy="http:
+  port: 9090
+  host: 0.0.0.0 # default"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-s">http</span>:
+  <span class="tok-s">port</span>: <span class="tok-l">9090</span>
+  <span class="tok-s">host</span>: <span class="tok-l">0.0.0.0</span> <span class="tok-cm"># default</span></code></pre>
+</figure>
+
+<p><code class="inline">GET /health</code> returns <code class="inline">200</code> when processors are running and NATS is connected, <code class="inline">503</code> otherwise:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="curl localhost:9090/health
+# {&quot;status&quot;:&quot;ok&quot;,&quot;checks&quot;:{&quot;engine&quot;:true,&quot;nats&quot;:true}}"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>curl localhost:9090/health
+<span class="tok-cm"># {&quot;status&quot;:&quot;ok&quot;,&quot;checks&quot;:{&quot;engine&quot;:true,&quot;nats&quot;:true}}</span></code></pre>
+</figure>
+
+<p><code class="inline">GET /ping</code> always returns <code class="inline">200 pong</code> without checking anything, handy as a liveness probe (use <code class="inline">/health</code> for readiness):</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="curl localhost:9090/ping
+# pong"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>curl localhost:9090/ping
+<span class="tok-cm"># pong</span></code></pre>
+</figure>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/17-cli.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="sentry.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Sentry</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="deployment.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Deployment</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="docs-toc" aria-label="On this page">
+      <p class="docs-nav__group">On this page</p>
+      <ul class="docs-toc__list">
+        <li><a href="#global-flags">Global flags</a></li>
+        <li><a href="#jobs-options"><code class="inline">jobs</code> options</a></li>
+        <li><a href="#streams-options"><code class="inline">streams</code> options</a></li>
+        <li><a href="#signals">Signals</a></li>
+        <li><a href="#health-check">Health check</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

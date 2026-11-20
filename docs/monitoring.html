@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitoring — Cosmonats docs</title>
+  <meta name="description" content="Mount Cosmo::Web (see Installation) for a live, htmx-powered dashboard with a light, dark, or automatic (system) theme. Fonts and assets are bundled, so it loads nothing from a CDN">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Monitoring</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html" class="is-active" aria-current="page">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Operations</span>
+        <h1 class="docs-title">Monitoring</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<h2 id="web-ui"><a class="docs-anchor" href="#web-ui" aria-hidden="true" tabindex="-1">#</a>Web UI</h2>
+
+<p>Mount <code class="inline">Cosmo::Web</code> (see <a href="installation.html">Installation</a>) for a live, htmx-powered dashboard with a
+light, dark, or automatic (system) theme. Fonts and assets are bundled, so it loads nothing from a CDN:</p>
+<ul>
+  <li><strong>Overview</strong> — processed, failed, busy, enqueued, retries, scheduled and dead totals; a 7- or 30-day throughput
+chart of successful and failed runs; a grid of every worker thread, busy ones colored by stream; the queues; and the
+a sample of the jobs running right now</li>
+  <li><strong>Jobs</strong> — each job queue with its size, busy jobs and redeliveries, paused and resumed in place; then busy,
+enqueued (per queue), scheduled and dead jobs, with retry and delete for dead ones and their error and backtrace</li>
+  <li><strong>Processes</strong> — every live worker (idle ones included): host, pid, IP, NATS connection name, command line,
+subscribed streams, busy/concurrency, running/quiet/stopping state, memory, NATS RTT and reconnects. Each worker
+beats into the <code class="inline">_cosmoprocesses</code> KV bucket every 10s, and the jobs it’s running into <code class="inline">_cosmojobs</code>; a crashed worker
+drops out within 60s. Busy jobs come from those heartbeats, so they show up to 10s late, and a job shorter than that
+may not show at all. The page reads only the processes it shows, and every count is answered by NATS from the keys.</li>
+  <li><strong>Streams</strong> — every stream with its subjects, messages, size, retention and replicas, its consumers’ pending,
+ack-pending and redelivered counts, and pause/resume</li>
+  <li><strong>Crons</strong> — every schedule deployed in NATS, with run-now and delete</li>
+  <li><strong>Batches</strong> — open and finished batches with their progress, succeeded/failed/pending counts and callbacks</li>
+  <li><strong>Metrics</strong> — per job class over today, 7, or 30 days: runs, failures, average execution time (successful runs), and
+average wait from enqueue to first delivery, plus a per-day chart of runs and average execution time. Recorded by
+<code class="inline">Cosmo::Middleware::Metrics</code>, flushed by every worker’s heartbeat into the internal <code class="inline">_cosmometrics</code> counters stream;
+turn it off with <code class="inline">config.metrics.enabled = false</code></li>
+</ul>
+
+<h2 id="job-id-links"><a class="docs-anchor" href="#job-id-links" aria-hidden="true" tabindex="-1">#</a>Job ID links</h2>
+
+<p>Every job ID in the Jobs tables can link out, e.g. to the job’s logs in Grafana. Give
+<code class="inline">config.web.jid_link</code> a URL template, whose <code class="inline">%{jid}</code>, <code class="inline">%{class}</code> and <code class="inline">%{stream}</code> are filled in URL-escaped (any other
+<code class="inline">%</code> in it is left as is), or a callable given the job’s payload (<code class="inline">:jid</code>, <code class="inline">:class</code>, <code class="inline">:args</code>, … and <code class="inline">:stream</code>) that
+returns the URL, or <code class="inline">nil</code> to keep that one as plain text. Links open in a new tab; only <code class="inline">http(s)</code> URLs are linked, and a
+raising callable falls back to plain text:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="Cosmo.configure do |config|
+  config.web.jid_link = &quot;https://grafana.example.com/d/jobs/cosmo?var-jid=%{jid}&amp;var-class=%{class}&quot;
+  # or
+  config.web.jid_link = lambda do |job|
+    &quot;https://grafana.example.com/explore?left=&quot; + ERB::Util.url_encode(
+      { queries: [{ expr: %({app=&quot;worker&quot;} |= &quot;jid=#{job[:jid]}&quot;) }], range: { from: &quot;now-7d&quot;, to: &quot;now&quot; } }.to_json
+    )
+  end
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-c">Cosmo</span>.<span class="tok-m">configure</span> <span class="tok-k">do</span> |config|
+  config.<span class="tok-m">web</span>.<span class="tok-m">jid_link</span> = <span class="tok-l">&quot;https://grafana.example.com/d/jobs/cosmo?var-jid=%{jid}&amp;var-class=%{class}&quot;</span>
+  <span class="tok-cm"># or</span>
+  config.<span class="tok-m">web</span>.<span class="tok-m">jid_link</span> = lambda <span class="tok-k">do</span> |job|
+    <span class="tok-l">&quot;https://grafana.example.com/explore?left=&quot;</span> + <span class="tok-c">ERB</span>::<span class="tok-c">Util</span>.<span class="tok-m">url_encode</span>(
+      { <span class="tok-s">queries: </span>[{ <span class="tok-s">expr: </span><span class="tok-l">%({app=&quot;worker&quot;} |= &quot;jid=</span><span class="tok-l">#{</span>job[<span class="tok-s">:jid</span>]<span class="tok-l">}</span><span class="tok-l">&quot;)</span> }], <span class="tok-s">range: </span>{ <span class="tok-s">from: </span><span class="tok-l">&quot;now-7d&quot;</span>, <span class="tok-s">to: </span><span class="tok-l">&quot;now&quot;</span> } }.<span class="tok-m">to_json</span>
+    )
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+
+<h2 id="batch-id-links"><a class="docs-anchor" href="#batch-id-links" aria-hidden="true" tabindex="-1">#</a>Batch ID links</h2>
+
+<p><code class="inline">config.web.bid_link</code> does the same for batch IDs on the Batches page: a URL template with <code class="inline">%{bid}</code>
+and <code class="inline">%{parent_id}</code>, or a callable given <code class="inline">:bid</code>, <code class="inline">:parent_id</code> and <code class="inline">:description</code>.</p>
+
+<h2 id="refreshing"><a class="docs-anchor" href="#refreshing" aria-hidden="true" tabindex="-1">#</a>Refreshing</h2>
+
+<p>Each panel refreshes <code class="inline">COSMO_WEB_POLL_INTERVAL</code> seconds after its previous response, never on top of one still
+running, backs off while refreshes fail, and pauses in a hidden tab. Identical refreshes from several viewers share a
+single NATS read for <code class="inline">COSMO_WEB_CACHE_TTL</code> seconds, and while NATS is unreachable the UI answers at once instead of
+holding your app server’s threads.</p>
+
+<h2 id="structured-logs"><a class="docs-anchor" href="#structured-logs" aria-hidden="true" tabindex="-1">#</a>Structured logs</h2>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">text</span><button class="copy-btn" type="button" data-copy="2026-01-23T10:15:30.123Z INFO pid=12345 tid=abc jid=def: start
+2026-01-23T10:15:32.456Z INFO pid=12345 tid=abc jid=def elapsed=2.333: done"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>2026-01-23T10:15:30.123Z INFO pid=12345 tid=abc jid=def: start
+2026-01-23T10:15:32.456Z INFO pid=12345 tid=abc jid=def elapsed=2.333: done</code></pre>
+</figure>
+
+<h2 id="stream-metrics"><a class="docs-anchor" href="#stream-metrics" aria-hidden="true" tabindex="-1">#</a>Stream metrics</h2>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="client = Cosmo::Client.instance
+info = client.stream_info(&quot;default&quot;)
+
+info.state.messages       # Total messages
+info.state.bytes          # Total bytes
+info.state.consumer_count # Number of consumers"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>client = <span class="tok-c">Cosmo</span>::<span class="tok-c">Client</span>.<span class="tok-m">instance</span>
+info = client.<span class="tok-m">stream_info</span>(<span class="tok-l">&quot;default&quot;</span>)
+
+info.<span class="tok-m">state</span>.<span class="tok-m">messages</span>       <span class="tok-cm"># Total messages</span>
+info.<span class="tok-m">state</span>.<span class="tok-m">bytes</span>          <span class="tok-cm"># Total bytes</span>
+info.<span class="tok-m">state</span>.<span class="tok-m">consumer_count</span> <span class="tok-cm"># Number of consumers</span></code></pre>
+</figure>
+
+<h2 id="prometheus"><a class="docs-anchor" href="#prometheus" aria-hidden="true" tabindex="-1">#</a>Prometheus</h2>
+
+<p>NATS exposes metrics at <code class="inline">:8222/metrics</code>:</p>
+<ul>
+  <li><code class="inline">jetstream_server_store_msgs</code> — Messages in stream</li>
+  <li><code class="inline">jetstream_consumer_delivered_msgs</code> — Delivered messages</li>
+  <li><code class="inline">jetstream_consumer_ack_pending</code> — Pending acknowledgments</li>
+</ul>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/19-monitoring.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="deployment.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Deployment</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="examples.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Examples</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="docs-toc" aria-label="On this page">
+      <p class="docs-nav__group">On this page</p>
+      <ul class="docs-toc__list">
+        <li><a href="#web-ui">Web UI</a></li>
+        <li><a href="#job-id-links">Job ID links</a></li>
+        <li><a href="#batch-id-links">Batch ID links</a></li>
+        <li><a href="#refreshing">Refreshing</a></li>
+        <li><a href="#structured-logs">Structured logs</a></li>
+        <li><a href="#stream-metrics">Stream metrics</a></li>
+        <li><a href="#prometheus">Prometheus</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deployment — Cosmonats docs</title>
+  <meta name="description" content="bash sudo systemctl enable cosmo &amp;&amp; sudo systemctl start cosmo">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Deployment</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html" class="is-active" aria-current="page">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Operations</span>
+        <h1 class="docs-title">Deployment</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<h2 id="nats-cluster"><a class="docs-anchor" href="#nats-cluster" aria-hidden="true" tabindex="-1">#</a>NATS cluster</h2>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="# nats-server.conf
+port: 4222
+jetstream {
+  store_dir: /var/lib/nats
+  max_file: 10G
+}
+cluster {
+  name: cosmo-cluster
+  listen: 0.0.0.0:6222
+  routes: [nats://nats-2:6222, nats://nats-3:6222]
+}"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-cm"># nats-server.conf</span>
+port: 4222
+jetstream {
+  store_dir: /var/lib/nats
+  max_file: 10G
+}
+cluster {
+  name: cosmo-cluster
+  listen: 0.0.0.0:6222
+  routes: [nats://nats-2:6222, nats://nats-3:6222]
+}</code></pre>
+</figure>
+
+<h2 id="docker-compose"><a class="docs-anchor" href="#docker-compose" aria-hidden="true" tabindex="-1">#</a>Docker Compose</h2>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">yaml</span><button class="copy-btn" type="button" data-copy="services:
+  nats:
+    image: nats:latest
+    command: -js -c /etc/nats/nats-server.conf
+    volumes:
+      - ./nats.conf:/etc/nats/nats-server.conf
+      - nats-data:/var/lib/nats
+
+  worker:
+    build: .
+    environment:
+      NATS_URL: nats://nats:4222
+    command: bundle exec cosmo -C config/cosmo.yml -c 20 jobs
+    deploy:
+      replicas: 3"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-s">services</span>:
+  <span class="tok-s">nats</span>:
+    <span class="tok-s">image</span>: <span class="tok-l">nats:latest</span>
+    <span class="tok-s">command</span>: <span class="tok-l">-js -c /etc/nats/nats-server.conf</span>
+    <span class="tok-s">volumes</span>:
+      - <span class="tok-l">./nats.conf:/etc/nats/nats-server.conf</span>
+      - <span class="tok-l">nats-data:/var/lib/nats</span>
+
+  <span class="tok-s">worker</span>:
+    <span class="tok-s">build</span>: <span class="tok-l">.</span>
+    <span class="tok-s">environment</span>:
+      <span class="tok-s">NATS_URL</span>: <span class="tok-l">nats://nats:4222</span>
+    <span class="tok-s">command</span>: <span class="tok-l">bundle exec cosmo -C config/cosmo.yml -c 20 jobs</span>
+    <span class="tok-s">deploy</span>:
+      <span class="tok-s">replicas</span>: <span class="tok-l">3</span></code></pre>
+</figure>
+
+<h2 id="systemd"><a class="docs-anchor" href="#systemd" aria-hidden="true" tabindex="-1">#</a>systemd</h2>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ini</span><button class="copy-btn" type="button" data-copy="# /etc/systemd/system/cosmo.service
+[Unit]
+Description=Cosmo Background Processor
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/var/www/myapp
+Environment=RAILS_ENV=production
+Environment=NATS_URL=nats://localhost:4222
+ExecStart=/usr/local/bin/bundle exec cosmo -C config/cosmo.yml -c 20 jobs
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=cosmo
+
+[Install]
+WantedBy=multi-user.target"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-cm"># /etc/systemd/system/cosmo.service
+</span><span class="tok-c">[Unit]</span>
+Description=<span class="tok-l">Cosmo Background Processor</span>
+After=<span class="tok-l">network.target</span>
+
+<span class="tok-c">[Service]</span>
+Type=<span class="tok-l">simple</span>
+User=<span class="tok-l">deploy</span>
+WorkingDirectory=<span class="tok-l">/var/www/myapp</span>
+Environment=<span class="tok-l">RAILS_ENV=production</span>
+Environment=<span class="tok-l">NATS_URL=nats://localhost:4222</span>
+ExecStart=<span class="tok-l">/usr/local/bin/bundle exec cosmo -C config/cosmo.yml -c 20 jobs</span>
+Restart=<span class="tok-l">always</span>
+RestartSec=<span class="tok-l">10</span>
+StandardOutput=<span class="tok-l">syslog</span>
+StandardError=<span class="tok-l">syslog</span>
+SyslogIdentifier=<span class="tok-l">cosmo</span>
+
+<span class="tok-c">[Install]</span>
+WantedBy=<span class="tok-l">multi-user.target</span></code></pre>
+</figure>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="sudo systemctl enable cosmo &amp;&amp; sudo systemctl start cosmo"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-m">sudo </span>systemctl <span class="tok-m">enable </span>cosmo &amp;&amp; <span class="tok-m">sudo </span>systemctl start cosmo</code></pre>
+</figure>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/18-deployment.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="cli.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">CLI</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="monitoring.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Monitoring</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="docs-toc" aria-label="On this page">
+      <p class="docs-nav__group">On this page</p>
+      <ul class="docs-toc__list">
+        <li><a href="#nats-cluster">NATS cluster</a></li>
+        <li><a href="#docker-compose">Docker Compose</a></li>
+        <li><a href="#systemd">systemd</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

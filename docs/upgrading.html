@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Upgrading — Cosmonats docs</title>
+  <meta name="description" content="Before deploying">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Upgrading</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html" class="is-active" aria-current="page">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Operations</span>
+        <h1 class="docs-title">Upgrading</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<h2 id="07--08"><a class="docs-anchor" href="#07--08" aria-hidden="true" tabindex="-1">#</a>0.7 → 0.8</h2>
+
+<p>0.8 renames Cosmo’s internal NATS storage and changes the <code class="inline">dead</code> stream’s retention. Nothing is migrated
+automatically; these steps carry an existing deployment over. Run the <code class="inline">nats</code> commands against your production
+context.</p>
+
+<p><strong>Before deploying</strong></p>
+
+<ul>
+  <li>Remove <code class="inline">scheduled</code> and <code class="inline">dead</code> from <code class="inline">setup.jobs</code> and <code class="inline">consumers.jobs</code> in <code class="inline">config/cosmo.yml</code>, and <code class="inline">batch_expiry</code>
+(now <code class="inline">config.batches.expiry</code> in <code class="inline">Cosmo.configure</code>). Cosmo creates and tunes those streams itself.</li>
+  <li>Replace <code class="inline">require "cosmo/sentry/auto"</code> with:
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="require &quot;cosmo/middleware/sentry&quot;
+
+Cosmo.configure do |config|
+  config.server_middleware { |chain| chain.add Cosmo::Middleware::Sentry }
+  config.error_handlers &lt;&lt; Cosmo::Middleware::Sentry::ERROR_HANDLER
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>require <span class="tok-l">&quot;cosmo/middleware/sentry&quot;</span>
+
+<span class="tok-c">Cosmo</span>.<span class="tok-m">configure</span> <span class="tok-k">do</span> |config|
+  config.<span class="tok-m">server_middleware</span> { |chain| chain.<span class="tok-m">add</span> <span class="tok-c">Cosmo</span>::<span class="tok-c">Middleware</span>::<span class="tok-c">Sentry</span> }
+  config.<span class="tok-m">error_handlers</span> &lt;&lt; <span class="tok-c">Cosmo</span>::<span class="tok-c">Middleware</span>::<span class="tok-c">Sentry</span>::<span class="tok-c">ERROR_HANDLER</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+  </li>
+  <li>Replace any <code class="inline">Cosmo::Config.set(...)</code> with <code class="inline">cosmo.yml</code> entries or <code class="inline">Cosmo.configure</code>.</li>
+  <li>Deploy while no batch is open and no concurrency-limited job is running: batch state and limit slots move to new
+buckets, which old and new workers don’t share during a rolling deploy.</li>
+</ul>
+
+<p><strong>1. Deploy every worker and web process.</strong> No old process may keep running, or it keeps counting into the old
+streams.</p>
+
+<p><strong>2. Recreate the <code class="inline">dead</code> stream</strong> (it switches to <code class="inline">workqueue</code> retention, which NATS can’t change in place):</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="nats stream backup dead ./dead-backup   # optional: keep the parked jobs
+nats stream rm dead -f"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>nats stream backup dead ./dead-backup   <span class="tok-cm"># optional: keep the parked jobs</span>
+nats stream <span class="tok-m">rm </span>dead <span class="tok-s">-f</span></code></pre>
+</figure>
+
+<p><strong>3. Create the new streams:</strong></p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="bundle exec cosmo -C config/cosmo.yml --setup"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>bundle <span class="tok-m">exec </span>cosmo <span class="tok-s">-C</span> config/cosmo.yml <span class="tok-s">--setup</span></code></pre>
+</figure>
+
+<p><strong>4. Copy the lifetime totals</strong> from <code class="inline">_cosmostats</code> (the <code class="inline">{"val":"N"}</code> of each message) into <code class="inline">_cosmototals</code>:</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="nats stream get _cosmostats --last-for _cosmostats.jobs.processed
+nats stream get _cosmostats --last-for _cosmostats.jobs.failed
+
+nats pub _cosmototals.jobs.processed &quot;&quot; -H &quot;Nats-Incr:+&lt;processed&gt;&quot; --jetstream
+nats pub _cosmototals.jobs.failed    &quot;&quot; -H &quot;Nats-Incr:+&lt;failed&gt;&quot;    --jetstream"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>nats stream get _cosmostats <span class="tok-s">--last-for</span> _cosmostats.jobs.processed
+nats stream get _cosmostats <span class="tok-s">--last-for</span> _cosmostats.jobs.failed
+
+nats pub _cosmototals.jobs.processed <span class="tok-l">&quot;&quot;</span> <span class="tok-s">-H</span> <span class="tok-l">&quot;Nats-Incr:+&lt;processed&gt;&quot;</span> <span class="tok-s">--jetstream</span>
+nats pub _cosmototals.jobs.failed    <span class="tok-l">&quot;&quot;</span> <span class="tok-s">-H</span> <span class="tok-l">&quot;Nats-Incr:+&lt;failed&gt;&quot;</span>    <span class="tok-s">--jetstream</span></code></pre>
+</figure>
+<p>The values are added, so jobs counted since the deploy are kept.</p>
+
+<p><strong>5. Delete the old stream and buckets</strong> — whichever of these exist (<code class="inline">nats stream ls --names</code>; a bucket shows up as
+<code class="inline">KV_&lt;bucket&gt;</code>):</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="nats stream rm _cosmostats -f
+nats kv del cosmo_jobs_batches -f
+nats kv del cosmo_jobs_busy -f
+nats kv del cosmo_processes -f
+nats kv del cosmo_jobs_limits -f
+nats kv del cosmostats -f         # left by early versions"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>nats stream <span class="tok-m">rm </span>_cosmostats <span class="tok-s">-f</span>
+nats kv del cosmo_jobs_batches <span class="tok-s">-f</span>
+nats kv del cosmo_jobs_busy <span class="tok-s">-f</span>
+nats kv del cosmo_processes <span class="tok-s">-f</span>
+nats kv del cosmo_jobs_limits <span class="tok-s">-f</span>
+nats kv del cosmostats <span class="tok-s">-f</span>         <span class="tok-cm"># left by early versions</span></code></pre>
+</figure>
+
+<p>Afterwards Cosmo’s own storage is <code class="inline">_cosmototals</code>, <code class="inline">_cosmobatches</code>, <code class="inline">_cosmometrics</code>, <code class="inline">scheduled</code>, <code class="inline">dead</code>, and the
+<code class="inline">KV__cosmo…</code> buckets; the limits and batches buckets appear when first used.</p>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/21-upgrading.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="examples.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Examples</span>
+        </a>
+      </nav>
+    </main>
+
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

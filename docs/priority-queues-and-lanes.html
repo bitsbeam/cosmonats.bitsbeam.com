@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Priority queues and lanes — Cosmonats docs</title>
+  <meta name="description" content="Each job consumer in cosmo.yml takes a priority:. Workers poll streams in weighted round-robin, so a stream with a higher number is polled more often:">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Priority queues and lanes</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html" class="is-active" aria-current="page">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Advanced usage</span>
+        <h1 class="docs-title">Priority queues and lanes</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<h2 id="priority-queues"><a class="docs-anchor" href="#priority-queues" aria-hidden="true" tabindex="-1">#</a>Priority queues</h2>
+
+<p>Each job consumer in <code class="inline">cosmo.yml</code> takes a <code class="inline">priority:</code>. Workers poll streams in weighted round-robin, so a stream with a
+higher number is polled more often:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">yaml</span><button class="copy-btn" type="button" data-copy="consumers:
+  jobs:
+    critical: { &lt;&lt;: *consumer_config, priority: 50 }
+    default: { &lt;&lt;: *consumer_config, priority: 15 }"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-s">consumers</span>:
+  <span class="tok-s">jobs</span>:
+    <span class="tok-s">critical</span>: { &lt;&lt;: *consumer_config, priority: 50 }
+    <span class="tok-s">default</span>: { &lt;&lt;: *consumer_config, priority: 15 }</code></pre>
+</figure>
+
+<p>A job picks its priority through the stream it runs on:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="class UrgentJob
+  include Cosmo::Job
+  options stream: :critical  # priority: 50 in config — polled most frequently
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">UrgentJob</span>
+  <span class="tok-k">include</span> <span class="tok-c">Cosmo</span>::<span class="tok-c">Job</span>
+  options <span class="tok-s">stream: :critical</span>  <span class="tok-cm"># priority: 50 in config — polled most frequently</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+
+<h2 id="lanes"><a class="docs-anchor" href="#lanes" aria-hidden="true" tabindex="-1">#</a>Lanes</h2>
+
+<p>A stream is FIFO, so 30k jobs of one batch hold back every job enqueued after them. <code class="inline">lanes</code> splits a stream between
+several consumers, <code class="inline">consumer-&lt;stream&gt;-lane-&lt;n&gt;</code>, each filtering <code class="inline">jobs.&lt;stream&gt;.lane-&lt;n&gt;.&gt;</code>, that workers poll in turn:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">yaml</span><button class="copy-btn" type="button" data-copy="consumers:
+  jobs:
+    crawlers: { &lt;&lt;: *consumer_config, priority: 30, lanes: 8 }"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-s">consumers</span>:
+  <span class="tok-s">jobs</span>:
+    <span class="tok-s">crawlers</span>: { &lt;&lt;: *consumer_config, priority: 30, lanes: 8 }</code></pre>
+</figure>
+
+<p>A job’s lane is its <code class="inline">lane:</code> option (an Integer, or any key hashed into one), else its batch, so a batch keeps to one
+lane, else its jid. The stream’s <code class="inline">priority</code> weighs all its lanes together, and <code class="inline">max_ack_pending</code> applies per lane.</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="CrawlJob.set(lane: tenant.id).perform_async(url)"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-c">CrawlJob</span>.<span class="tok-m">set</span>(<span class="tok-s">lane: </span>tenant.<span class="tok-m">id</span>).<span class="tok-m">perform_async</span>(url)</code></pre>
+</figure>
+
+<p>The lane is part of the subject, so every process that enqueues needs the same config (the Railtie loads it). Crons and
+delayed jobs go through the <code class="inline">scheduled</code> stream, which has no lanes: the scheduler puts each cron firing on a lane when it
+dispatches it, and a delayed job keeps the lane it was enqueued with. On a <code class="inline">workqueue</code> stream, the old <code class="inline">consumer-&lt;stream&gt;</code> overlaps the lanes’
+filters: drain it and delete it before you turn lanes on. Adding lanes is safe; drain a stream before removing some, as
+jobs left on a dropped lane are never fetched.</p>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/8-priority-queues-and-lanes.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="cron.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Cron</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="batches.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Batches</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="docs-toc" aria-label="On this page">
+      <p class="docs-nav__group">On this page</p>
+      <ul class="docs-toc__list">
+        <li><a href="#priority-queues">Priority queues</a></li>
+        <li><a href="#lanes">Lanes</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

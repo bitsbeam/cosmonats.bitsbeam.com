@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuration — Cosmonats docs</title>
+  <meta name="description" content="NATS subjects follow a dot-separated hierarchy (events.clicks.homepage). The &gt; wildcard matches everything after that prefix. Think of subjects as topic names — flexible routing wi">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Configuration</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html" class="is-active" aria-current="page">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Core concepts</span>
+        <h1 class="docs-title">Configuration</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<h2 id="subjects"><a class="docs-anchor" href="#subjects" aria-hidden="true" tabindex="-1">#</a>Subjects</h2>
+
+<p>NATS subjects follow a dot-separated hierarchy (<code class="inline">events.clicks.homepage</code>).
+The <code class="inline">&gt;</code> wildcard matches everything after that prefix. Think of subjects as topic names — flexible routing with no extra configuration.</p>
+
+<h2 id="cosmoyml"><a class="docs-anchor" href="#cosmoyml" aria-hidden="true" tabindex="-1">#</a>cosmo.yml</h2>
+
+<p><code class="inline">config/cosmo.yml</code> is optional. Cosmo ships its defaults in
+<a href="https://github.com/bitsbeam/cosmonats/blob/main/lib/cosmo/config/cosmo.yml" rel="noopener"><code class="inline">lib/cosmo/config/cosmo.yml</code></a> (<code class="inline">cosmo --init</code> copies it into your project), and your
+file is deep-merged over them: keep only what you change. The one list that is not merged is your job streams —
+listing any under <code class="inline">setup.jobs</code> replaces the built-in <code class="inline">default</code> stream and its consumer:</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">yaml</span><button class="copy-btn" type="button" data-copy="concurrency: 10
+
+stream_config: &amp;stream_config
+  storage: file
+  retention: workqueue
+  duplicate_window: 120 # seconds
+  discard: new
+  allow_direct: true    # required by the web UI
+  num_replicas: 1       # e.g. 3 on a NATS cluster
+  subjects: [&quot;jobs.%{name}.&gt;&quot;]
+
+consumer_config: &amp;consumer_config
+  ack_policy: explicit
+  max_deliver: 30       # keep it above every job class's retry
+  max_ack_pending: 20
+  max_waiting: 512      # pulls the server parks per consumer, raise it when many idle threads poll one stream
+  ack_wait: 60          # seconds
+  subject: jobs.%{name}.&gt;
+
+setup:
+  jobs:
+    critical: { &lt;&lt;: *stream_config }
+    default: { &lt;&lt;: *stream_config }
+  streams:              # Cosmo::Stream processors are always yours to declare
+    events:
+      storage: file
+      retention: limits
+      max_age: 86400
+      subjects: [&quot;events.&gt;&quot;]
+
+consumers:
+  jobs:
+    critical: { &lt;&lt;: *consumer_config, priority: 50 }
+    default: { &lt;&lt;: *consumer_config, priority: 15 }"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-s">concurrency</span>: <span class="tok-l">10</span>
+
+<span class="tok-s">stream_config</span>: &amp;stream_config
+  <span class="tok-s">storage</span>: <span class="tok-l">file</span>
+  <span class="tok-s">retention</span>: <span class="tok-l">workqueue</span>
+  <span class="tok-s">duplicate_window</span>: <span class="tok-l">120</span> <span class="tok-cm"># seconds</span>
+  <span class="tok-s">discard</span>: <span class="tok-l">new</span>
+  <span class="tok-s">allow_direct</span>: <span class="tok-k">true</span>    <span class="tok-cm"># required by the web UI</span>
+  <span class="tok-s">num_replicas</span>: <span class="tok-l">1</span>       <span class="tok-cm"># e.g. 3 on a NATS cluster</span>
+  <span class="tok-s">subjects</span>: [<span class="tok-l">&quot;</span><span class="tok-l">jobs.%{name}.&gt;&quot;</span>]
+
+<span class="tok-s">consumer_config</span>: &amp;consumer_config
+  <span class="tok-s">ack_policy</span>: <span class="tok-l">explicit</span>
+  <span class="tok-s">max_deliver</span>: <span class="tok-l">30</span>       <span class="tok-cm"># keep it above every job class&#39;s retry</span>
+  <span class="tok-s">max_ack_pending</span>: <span class="tok-l">20</span>
+  <span class="tok-s">max_waiting</span>: <span class="tok-l">512</span>      <span class="tok-cm"># pulls the server parks per consumer, raise it when many idle threads poll one stream</span>
+  <span class="tok-s">ack_wait</span>: <span class="tok-l">60</span>          <span class="tok-cm"># seconds</span>
+  <span class="tok-s">subject</span>: <span class="tok-l">jobs.%{name}.&gt;</span>
+
+<span class="tok-s">setup</span>:
+  <span class="tok-s">jobs</span>:
+    <span class="tok-s">critical</span>: { &lt;&lt;: *stream_config }
+    <span class="tok-s">default</span>: { &lt;&lt;: *stream_config }
+  <span class="tok-s">streams</span>:              <span class="tok-cm"># Cosmo::Stream processors are always yours to declare</span>
+    <span class="tok-s">events</span>:
+      <span class="tok-s">storage</span>: <span class="tok-l">file</span>
+      <span class="tok-s">retention</span>: <span class="tok-l">limits</span>
+      <span class="tok-s">max_age</span>: <span class="tok-l">86400</span>
+      <span class="tok-s">subjects</span>: [<span class="tok-l">&quot;</span><span class="tok-l">events.&gt;&quot;</span>]
+
+<span class="tok-s">consumers</span>:
+  <span class="tok-s">jobs</span>:
+    <span class="tok-s">critical</span>: { &lt;&lt;: *consumer_config, priority: 50 }
+    <span class="tok-s">default</span>: { &lt;&lt;: *consumer_config, priority: 15 }</code></pre>
+</figure>
+<p><code class="inline">max_age</code>, <code class="inline">duplicate_window</code>, and <code class="inline">ack_wait</code> are in seconds. Without <code class="inline">setup.jobs</code>, <code class="inline">consumers.jobs.default</code> still
+tunes the built-in consumer (e.g. just <code class="inline">ack_wait: 300</code>).</p>
+
+<p><code class="inline">consumers.jobs</code> can also be a list of groups, e.g. to mirror which streams each worker fleet runs together. It is
+flattened on load, so it only organizes the file; a stream may appear in one group only:</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">yaml</span><button class="copy-btn" type="button" data-copy="consumers:
+  jobs:
+    - critical: { &lt;&lt;: *consumer_config, priority: 50 }
+      default: { &lt;&lt;: *consumer_config, priority: 15 }
+    - crawlers: { &lt;&lt;: *consumer_config, ack_wait: 1860 }"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-s">consumers</span>:
+  <span class="tok-s">jobs</span>:
+    - <span class="tok-s">critical</span>: { &lt;&lt;: *consumer_config, priority: 50 }
+      <span class="tok-s">default</span>: { &lt;&lt;: *consumer_config, priority: 15 }
+    - <span class="tok-s">crawlers</span>: { &lt;&lt;: *consumer_config, ack_wait: 1860 }</code></pre>
+</figure>
+
+<h2 id="service-streams"><a class="docs-anchor" href="#service-streams" aria-hidden="true" tabindex="-1">#</a>Service streams</h2>
+
+<p>The <code class="inline">scheduled</code> stream (delayed jobs, crons), the <code class="inline">dead</code> stream (dead letters), and the stats
+counters and KV buckets are Cosmo’s own: they are not part of <code class="inline">cosmo.yml</code>, and <code class="inline">cosmo --setup</code> creates them next to
+yours. Tune them in <code class="inline">Cosmo.configure</code>:</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="Cosmo.configure do |config|
+  config.services.num_replicas = 3   # every service stream and bucket, for a NATS cluster (default 1)
+  config.dead.max_age = &quot;14d&quot;        # dead-letter retention: max_age, max_msgs (10_000), max_bytes (-1); default 7d
+  config.dead.enabled = false        # drop jobs that give up instead of parking them
+  config.scheduled.enabled = false   # no scheduled stream or scheduler: perform_in/perform_at and crons raise
+  config.batches.expiry = &quot;1d&quot;       # how long batch tracking data lives (default 3d)
+  config.metrics.retention = &quot;90d&quot;   # how long the Metrics tab's per-day numbers are kept (default 30d)
+  config.metrics.enabled = false     # record nothing and hide the Metrics tab
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-c">Cosmo</span>.<span class="tok-m">configure</span> <span class="tok-k">do</span> |config|
+  config.<span class="tok-m">services</span>.<span class="tok-m">num_replicas</span> = <span class="tok-l">3</span>   <span class="tok-cm"># every service stream and bucket, for a NATS cluster (default 1)</span>
+  config.<span class="tok-m">dead</span>.<span class="tok-m">max_age</span> = <span class="tok-l">&quot;14d&quot;</span>        <span class="tok-cm"># dead-letter retention: max_age, max_msgs (10_000), max_bytes (-1); default 7d</span>
+  config.<span class="tok-m">dead</span>.<span class="tok-m">enabled</span> = <span class="tok-k">false</span>        <span class="tok-cm"># drop jobs that give up instead of parking them</span>
+  config.<span class="tok-m">scheduled</span>.<span class="tok-m">enabled</span> = <span class="tok-k">false</span>   <span class="tok-cm"># no scheduled stream or scheduler: perform_in/perform_at and crons raise</span>
+  config.<span class="tok-m">batches</span>.<span class="tok-m">expiry</span> = <span class="tok-l">&quot;1d&quot;</span>       <span class="tok-cm"># how long batch tracking data lives (default 3d)</span>
+  config.<span class="tok-m">metrics</span>.<span class="tok-m">retention</span> = <span class="tok-l">&quot;90d&quot;</span>   <span class="tok-cm"># how long the Metrics tab&#39;s per-day numbers are kept (default 30d)</span>
+  config.<span class="tok-m">metrics</span>.<span class="tok-m">enabled</span> = <span class="tok-k">false</span>     <span class="tok-cm"># record nothing and hide the Metrics tab</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+<p>Turning <code class="inline">scheduled</code> or <code class="inline">dead</code> off also hides their pages in the web UI. Stats can’t be turned off — the web UI
+depends on them.</p>
+
+<h2 id="ruby-configuration"><a class="docs-anchor" href="#ruby-configuration" aria-hidden="true" tabindex="-1">#</a>Ruby configuration</h2>
+
+<p><code class="inline">cosmo.yml</code> holds streams, consumers, and process settings; <code class="inline">Cosmo.configure</code> holds what YAML can’t
+express (loggers, middleware) and Cosmo’s service settings. Command-line flags (<code class="inline">-c</code>, <code class="inline">-t</code>, <code class="inline">-p</code>) win over the file.</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="Cosmo.configure do |config|
+  config.logger = Rails.logger # any ::Logger; defaults to stdout
+  config.log_level = :debug    # COSMO_LOG_LEVEL, when set, wins
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-c">Cosmo</span>.<span class="tok-m">configure</span> <span class="tok-k">do</span> |config|
+  config.<span class="tok-m">logger</span> = <span class="tok-c">Rails</span>.<span class="tok-m">logger</span> <span class="tok-cm"># any ::Logger; defaults to stdout</span>
+  config.<span class="tok-m">log_level</span> = <span class="tok-s">:debug</span>    <span class="tok-cm"># COSMO_LOG_LEVEL, when set, wins</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+<p>Cosmo leaves a custom logger’s formatter alone, so its lines lack Cosmo’s <code class="inline">jid</code>/<code class="inline">elapsed</code> context unless you set
+<code class="inline">logger.formatter = Cosmo::Logger::SimpleFormatter.new</code>. Trace output is dropped for loggers without a <code class="inline">trace</code> level.</p>
+
+<h2 id="environment-variables"><a class="docs-anchor" href="#environment-variables" aria-hidden="true" tabindex="-1">#</a>Environment variables</h2>
+
+<div class="table-wrap"><table class="docs-table">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Default</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="inline">NATS_URL</code></td>
+      <td><code class="inline">nats://localhost:4222</code></td>
+      <td>NATS server(s) to connect to</td>
+    </tr>
+    <tr>
+      <td><code class="inline">COSMO_LOG_LEVEL</code></td>
+      <td><code class="inline">info</code></td>
+      <td><code class="inline">trace</code>, <code class="inline">debug</code>, <code class="inline">info</code>, <code class="inline">warn</code>, <code class="inline">error</code> or <code class="inline">fatal</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">COSMO_CLIENT_NAME</code></td>
+      <td><code class="inline">cosmo-&lt;program&gt;-&lt;host&gt;-&lt;pid&gt;</code></td>
+      <td>NATS connection name, shown in <code class="inline">nats server report connections</code> and <code class="inline">/connz</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">COSMO_JS_TIMEOUT</code></td>
+      <td><code class="inline">5</code></td>
+      <td>JetStream API timeout in seconds; raise it for the web UI on a busy server</td>
+    </tr>
+    <tr>
+      <td><code class="inline">COSMO_CONNECT_TIMEOUT</code></td>
+      <td><code class="inline">2</code></td>
+      <td>NATS TCP connect timeout in seconds</td>
+    </tr>
+    <tr>
+      <td><code class="inline">NATS_MAX_RECONNECT_ATTEMPTS</code></td>
+      <td><code class="inline">-1</code></td>
+      <td>Reconnect attempts before giving up on NATS; <code class="inline">-1</code> keeps trying through any outage</td>
+    </tr>
+    <tr>
+      <td><code class="inline">COSMO_JOBS_STREAMS</code></td>
+      <td>all configured</td>
+      <td>Comma-separated job streams to subscribe to, when <code class="inline">--streams</code>/<code class="inline">--stream</code> isn’t given</td>
+    </tr>
+    <tr>
+      <td><code class="inline">COSMO_JOBS_FETCH_TIMEOUT</code></td>
+      <td><code class="inline">0.1</code></td>
+      <td>Seconds a jobs worker waits on each fetch</td>
+    </tr>
+    <tr>
+      <td><code class="inline">COSMO_WEB_POLL_INTERVAL</code></td>
+      <td><code class="inline">5</code></td>
+      <td>Web UI auto-refresh interval in seconds</td>
+    </tr>
+    <tr>
+      <td><code class="inline">COSMO_WEB_CACHE_TTL</code></td>
+      <td><code class="inline">2</code></td>
+      <td>Seconds the web UI shares a refresh between viewers; <code class="inline">0</code> turns sharing off</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/6-configuration.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="streams.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Streams</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="cron.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Cron</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="docs-toc" aria-label="On this page">
+      <p class="docs-nav__group">On this page</p>
+      <ul class="docs-toc__list">
+        <li><a href="#subjects">Subjects</a></li>
+        <li><a href="#cosmoyml">cosmo.yml</a></li>
+        <li><a href="#service-streams">Service streams</a></li>
+        <li><a href="#ruby-configuration">Ruby configuration</a></li>
+        <li><a href="#environment-variables">Environment variables</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

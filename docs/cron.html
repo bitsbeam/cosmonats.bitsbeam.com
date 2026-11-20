@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cron — Cosmonats docs</title>
+  <meta name="description" content="Recurring jobs, without a separate scheduler process. A schedule is just a message parked in the scheduled stream (requires NATS Server 2.14+) — NATS fires it on the cron expressio">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Cron</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html" class="is-active" aria-current="page">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Advanced usage</span>
+        <h1 class="docs-title">Cron</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<p>Recurring jobs, without a separate scheduler process. A schedule is just a message parked in the
+<code class="inline">scheduled</code> stream (requires NATS Server 2.14+) — NATS fires it on the cron expression, and the
+worker’s scheduler dispatches the job on to the stream that runs it, the same path a delayed job
+takes. Deploy it once; whatever’s in NATS is exactly what runs and exactly what shows up in the web
+UI’s <strong>Crons</strong> tab, where each entry can be inspected, run immediately, or deleted.</p>
+
+<p>Every schedule lives in <code class="inline">scheduled</code> because NATS only lets a schedule fire at a subject its own
+stream covers, and refuses <code class="inline">discard: new</code> on any stream with scheduling enabled. Keeping schedules
+in one stream leaves every stream that actually runs jobs free to choose its own discard policy.
+The trade is that cron firings are dispatched by the scheduler, so at least one worker has to be
+running without <code class="inline">--no-scheduler</code>.</p>
+
+<p>Declare schedules right in <code class="inline">config/cosmo.yml</code>:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">yaml</span><button class="copy-btn" type="button" data-copy="setup:
+  cron:
+    daily_report:
+      class: ReportJob
+      schedule: &quot;@daily&quot;        # @-shortcuts are passed straight through to NATS
+      stream: default
+    weekday_digest:
+      class: ReportJob
+      schedule: &quot;0 9 * * 1-5&quot;   # 6-field NATS cron (seconds first); 5-field UNIX cron is auto-normalized
+      stream: default
+      args: [&quot;daily&quot;]
+      timezone: America/New_York # optional, cron expressions only"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-s">setup</span>:
+  <span class="tok-s">cron</span>:
+    <span class="tok-s">daily_report</span>:
+      <span class="tok-s">class</span>: <span class="tok-l">ReportJob</span>
+      <span class="tok-s">schedule</span>: <span class="tok-l">&quot;</span><span class="tok-l">@daily&quot;</span>        <span class="tok-cm"># @-shortcuts are passed straight through to NATS</span>
+      <span class="tok-s">stream</span>: <span class="tok-l">default</span>
+    <span class="tok-s">weekday_digest</span>:
+      <span class="tok-s">class</span>: <span class="tok-l">ReportJob</span>
+      <span class="tok-s">schedule</span>: <span class="tok-l">&quot;</span><span class="tok-l">0</span> <span class="tok-l">9</span> <span class="tok-l">*</span> <span class="tok-l">*</span> <span class="tok-l">1-5&quot;</span>   <span class="tok-cm"># 6-field NATS cron (seconds first); 5-field UNIX cron is auto-normalized</span>
+      <span class="tok-s">stream</span>: <span class="tok-l">default</span>
+      <span class="tok-s">args</span>: [<span class="tok-l">&quot;</span><span class="tok-l">daily&quot;</span>]
+      <span class="tok-s">timezone</span>: <span class="tok-l">America/New_York</span> <span class="tok-cm"># optional, cron expressions only</span></code></pre>
+</figure>
+
+<p>Like <code class="inline">consumers.jobs</code>, <code class="inline">setup.cron</code> can be a list of groups (<code class="inline">- daily_report: {...}</code>) to keep related schedules together.
+They are flattened on load, so a name may appear in one group only.</p>
+
+<p><code class="inline">cosmo -C config/cosmo.yml -S</code> syncs it — whatever’s in the file is exactly what ends up scheduled in NATS, same as streams.</p>
+
+<p>Prefer to manage schedules at runtime instead? The same operations are available from Ruby:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="Cosmo::API::Cron.instance.upsert!(
+  class_name: &quot;ReportJob&quot;, stream: &quot;default&quot;, schedule: &quot;0 9 * * 1-5&quot;,
+  args: [&quot;daily&quot;], timezone: &quot;America/New_York&quot;, name: &quot;weekday_report&quot;
+)
+
+Cosmo::API::Cron.instance.all                                    # every schedule currently deployed
+Cosmo::API::Cron.instance.run_now!(&quot;cosmo.cron.default.report_job.weekday_report&quot;)  # bypass the timer
+Cosmo::API::Cron.instance.delete!(&quot;cosmo.cron.default.report_job.weekday_report&quot;)   # stop future firings"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-c">Cosmo</span>::<span class="tok-c">API</span>::<span class="tok-c">Cron</span>.<span class="tok-m">instance</span>.<span class="tok-m">upsert!</span>(
+  <span class="tok-s">class_name: </span><span class="tok-l">&quot;ReportJob&quot;</span>, <span class="tok-s">stream: </span><span class="tok-l">&quot;default&quot;</span>, <span class="tok-s">schedule: </span><span class="tok-l">&quot;0 9 * * 1-5&quot;</span>,
+  <span class="tok-s">args: </span>[<span class="tok-l">&quot;daily&quot;</span>], <span class="tok-s">timezone: </span><span class="tok-l">&quot;America/New_York&quot;</span>, <span class="tok-s">name: </span><span class="tok-l">&quot;weekday_report&quot;</span>
+)
+
+<span class="tok-c">Cosmo</span>::<span class="tok-c">API</span>::<span class="tok-c">Cron</span>.<span class="tok-m">instance</span>.<span class="tok-m">all</span>                                    <span class="tok-cm"># every schedule currently deployed</span>
+<span class="tok-c">Cosmo</span>::<span class="tok-c">API</span>::<span class="tok-c">Cron</span>.<span class="tok-m">instance</span>.<span class="tok-m">run_now!</span>(<span class="tok-l">&quot;cosmo.cron.default.report_job.weekday_report&quot;</span>)  <span class="tok-cm"># bypass the timer</span>
+<span class="tok-c">Cosmo</span>::<span class="tok-c">API</span>::<span class="tok-c">Cron</span>.<span class="tok-m">instance</span>.<span class="tok-m">delete!</span>(<span class="tok-l">&quot;cosmo.cron.default.report_job.weekday_report&quot;</span>)   <span class="tok-cm"># stop future firings</span></code></pre>
+</figure>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/7-cron.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="configuration.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Configuration</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="priority-queues-and-lanes.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Priority queues and lanes</span>
+        </a>
+      </nav>
+    </main>
+
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

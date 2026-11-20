@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Batches — Cosmonats docs</title>
+  <meta name="description" content="Group jobs together and fire a callback once every one of them has finished. The registered class is plain Ruby — it implements on_complete(status, opts) / on_success(status, opts)">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Batches</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html" class="is-active" aria-current="page">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Advanced usage</span>
+        <h1 class="docs-title">Batches</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<p>Group jobs together and fire a callback once every one of them has finished. The registered class
+is plain Ruby — it implements <code class="inline">on_complete(status, opts)</code> / <code class="inline">on_success(status, opts)</code>, not
+<code class="inline">perform</code> — and runs on the job worker pool, not inline on whichever thread finalized the batch.
+<code class="inline">status</code> is <code class="inline">{ bid:, total:, succeeded:, failed: }</code> and <code class="inline">opts</code> is whatever you passed to <code class="inline">#on</code>.</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="batch = Cosmo::Batch.new
+batch.jobs do
+  ImportJob.perform_async(1)
+  ImportJob.perform_async(2)
+end
+batch.on(:complete, NotifyUser, user_id: 1)  # fires once every job has finished, pass or fail
+batch.on(:success, NotifyUser, user_id: 1)   # fires only if none of them failed
+
+class NotifyUser
+  def on_complete(status, opts)
+    UserMailer.batch_done(opts[:user_id], status[:succeeded], status[:total]).deliver_later
+  end
+
+  def on_success(status, opts)
+    UserMailer.batch_succeeded(opts[:user_id]).deliver_later
+  end
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>batch = <span class="tok-c">Cosmo</span>::<span class="tok-c">Batch</span>.<span class="tok-m">new</span>
+batch.<span class="tok-m">jobs</span> <span class="tok-k">do</span>
+  <span class="tok-c">ImportJob</span>.<span class="tok-m">perform_async</span>(<span class="tok-l">1</span>)
+  <span class="tok-c">ImportJob</span>.<span class="tok-m">perform_async</span>(<span class="tok-l">2</span>)
+<span class="tok-k">end</span>
+batch.<span class="tok-m">on</span>(<span class="tok-s">:complete</span>, <span class="tok-c">NotifyUser</span>, <span class="tok-s">user_id: </span><span class="tok-l">1</span>)  <span class="tok-cm"># fires once every job has finished, pass or fail</span>
+batch.<span class="tok-m">on</span>(<span class="tok-s">:success</span>, <span class="tok-c">NotifyUser</span>, <span class="tok-s">user_id: </span><span class="tok-l">1</span>)   <span class="tok-cm"># fires only if none of them failed</span>
+
+<span class="tok-k">class</span> <span class="tok-c">NotifyUser</span>
+  <span class="tok-k">def</span> <span class="tok-m">on_complete</span>(status, opts)
+    <span class="tok-c">UserMailer</span>.<span class="tok-m">batch_done</span>(opts[<span class="tok-s">:user_id</span>], status[<span class="tok-s">:succeeded</span>], status[<span class="tok-s">:total</span>]).<span class="tok-m">deliver_later</span>
+  <span class="tok-k">end</span>
+
+  <span class="tok-k">def</span> <span class="tok-m">on_success</span>(status, opts)
+    <span class="tok-c">UserMailer</span>.<span class="tok-m">batch_succeeded</span>(opts[<span class="tok-s">:user_id</span>]).<span class="tok-m">deliver_later</span>
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+
+<ul>
+  <li><code class="inline">#jobs</code> is the only place membership is tracked — jobs enqueued outside the block aren’t part of
+the batch. Call it at least once (an empty block is fine) to close the batch.</li>
+  <li><code class="inline">:complete</code> always fires once every job is done. <code class="inline">:success</code> fires only if none were dead-lettered
+or dropped after exhausting retries. Both can be registered before or after <code class="inline">#jobs</code> — a callback
+registered after the batch has already finished still fires.</li>
+</ul>
+
+<h2 id="retried-jobs-jobsretriable-true"><a class="docs-anchor" href="#retried-jobs-jobsretriable-true" aria-hidden="true" tabindex="-1">#</a>Retried jobs: <code class="inline">jobs(retriable: true)</code></h2>
+
+<p><code class="inline">batch.jobs</code> keeps the batch open while its block runs, and lets the batch finish when the block ends. If the job
+running the block is stopped halfway, for example by a deploy, and retried, that breaks: the batch finishes after the
+jobs published so far and ignores the ones the retry publishes. Pass <code class="inline">retriable: true</code> in that case, and give the jobs
+fixed ids so the retry doesn’t enqueue the same job twice:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="class SliceJob
+  include Cosmo::Job
+  options retry: 3
+
+  def perform(batch_id, rows)
+    batch = Cosmo::Batch.new(bid: batch_id)
+    batch.on(:complete, NotifyUser, user_id: 1)
+
+    batch.jobs(retriable: true) do
+      RowJob.set(jids: rows.map { &quot;#{batch_id}-#{_1}&quot; }).perform_bulk(rows.map { [_1] })
+    end
+  end
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">SliceJob</span>
+  <span class="tok-k">include</span> <span class="tok-c">Cosmo</span>::<span class="tok-c">Job</span>
+  options <span class="tok-s">retry: </span><span class="tok-l">3</span>
+
+  <span class="tok-k">def</span> <span class="tok-m">perform</span>(batch_id, rows)
+    batch = <span class="tok-c">Cosmo</span>::<span class="tok-c">Batch</span>.<span class="tok-m">new</span>(<span class="tok-s">bid: </span>batch_id)
+    batch.<span class="tok-m">on</span>(<span class="tok-s">:complete</span>, <span class="tok-c">NotifyUser</span>, <span class="tok-s">user_id: </span><span class="tok-l">1</span>)
+
+    batch.<span class="tok-m">jobs</span>(<span class="tok-s">retriable: </span><span class="tok-k">true</span>) <span class="tok-k">do</span>
+      <span class="tok-c">RowJob</span>.<span class="tok-m">set</span>(<span class="tok-s">jids: </span>rows.<span class="tok-m">map</span> { <span class="tok-l">&quot;</span><span class="tok-l">#{</span>batch_id<span class="tok-l">}</span><span class="tok-l">-</span><span class="tok-l">#{</span>_1<span class="tok-l">}</span><span class="tok-l">&quot;</span> }).<span class="tok-m">perform_bulk</span>(rows.<span class="tok-m">map</span> { [_1] })
+    <span class="tok-k">end</span>
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+
+<p>Say <code class="inline">SliceJob</code> has 6 rows, and it is stopped after publishing 3 of them. Then it is retried:</p>
+
+<div class="table-wrap"><table class="docs-table">
+  <thead>
+    <tr>
+      <th> </th>
+      <th><code class="inline">jobs { }</code></th>
+      <th><code class="inline">jobs(retriable: true) { }</code></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>First run, stopped halfway</td>
+      <td>the batch finishes once the 3 published jobs are done</td>
+      <td>the batch stays open</td>
+    </tr>
+    <tr>
+      <td>Retry</td>
+      <td>publishes rows 4-6, but the batch is already finished</td>
+      <td>skips rows 1-3, publishes rows 4-6</td>
+    </tr>
+    <tr>
+      <td><code class="inline">:complete</code> callback</td>
+      <td>fires once, early, with <code class="inline">total: 3</code></td>
+      <td>fires once, after all 6 rows, with <code class="inline">total: 6</code></td>
+    </tr>
+    <tr>
+      <td>Jobs 4-6 failing</td>
+      <td>not counted</td>
+      <td>counted in <code class="inline">failed</code></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>The block runs again on every retry, so only use <code class="inline">retriable: true</code> in jobs that are retried. A block that raises
+without a retry leaves the batch open. Use it for one <code class="inline">jobs</code> call per batch.</p>
+
+<h2 id="nested-batches"><a class="docs-anchor" href="#nested-batches" aria-hidden="true" tabindex="-1">#</a>Nested batches</h2>
+
+<p>A running job can spawn its own sub-batch, which counts as one pending unit of its parent and propagates any failure
+upward as a single failure unit:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="class ImportJob
+  include Cosmo::Job
+
+  def perform(account_id)
+    sub_batch = Cosmo::Batch.new(parent: batch_id)  # batch_id is this job's own batch, if any
+    sub_batch.jobs { SyncRecordJob.perform_async(account_id) }
+  end
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">ImportJob</span>
+  <span class="tok-k">include</span> <span class="tok-c">Cosmo</span>::<span class="tok-c">Job</span>
+
+  <span class="tok-k">def</span> <span class="tok-m">perform</span>(account_id)
+    sub_batch = <span class="tok-c">Cosmo</span>::<span class="tok-c">Batch</span>.<span class="tok-m">new</span>(<span class="tok-s">parent: </span>batch_id)  <span class="tok-cm"># batch_id is this job&#39;s own batch, if any</span>
+    sub_batch.<span class="tok-m">jobs</span> { <span class="tok-c">SyncRecordJob</span>.<span class="tok-m">perform_async</span>(account_id) }
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+
+<h2 id="notes"><a class="docs-anchor" href="#notes" aria-hidden="true" tabindex="-1">#</a>Notes</h2>
+
+<ul>
+  <li>Batch tracking data (pending counts, callbacks, results) expires automatically after
+<code class="inline">config.batches.expiry</code> (default: 3 days), set in <code class="inline">Cosmo.configure</code>.</li>
+  <li>Open and finished batches — with pending/succeeded/failed counts — are listed live on the web UI’s <strong>Batches</strong> page.</li>
+  <li>Only <code class="inline">Cosmo::Job</code>-based jobs are tracked; the ActiveJob adapter doesn’t currently participate in
+batches (see <a href="active-job.html">Active Job</a>).</li>
+</ul>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/9-batches.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="priority-queues-and-lanes.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Priority queues and lanes</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="concurrency-limiting.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Concurrency limiting</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="docs-toc" aria-label="On this page">
+      <p class="docs-nav__group">On this page</p>
+      <ul class="docs-toc__list">
+        <li><a href="#retried-jobs-jobsretriable-true">Retried jobs: <code class="inline">jobs(retriable: true)</code></a></li>
+        <li><a href="#nested-batches">Nested batches</a></li>
+        <li><a href="#notes">Notes</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

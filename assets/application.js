@@ -12,6 +12,7 @@
  *   3. Journey           .journey [data-journey-map] scroll-driven rocket / UFO
  *   4. Copy              [data-copy]                 copy-to-clipboard buttons
  *   5. Reading progress  [data-reading-progress]     progress bar on posts
+ *   6. Docs nav          [data-docs-nav]             collapsible sidebar on docs pages
  */
 
 
@@ -359,4 +360,23 @@
   }, { passive: true });
   window.addEventListener('resize', update);
   update();
+})();
+
+
+/* 6. Docs nav ============================================================== */
+/**
+ * Collapses the docs sidebar into a menu on narrow screens.
+ *
+ * Usage: <details class="docs-nav" open data-docs-nav>…</details>
+ */
+(function () {
+  'use strict';
+
+  const nav = document.querySelector('[data-docs-nav]');
+  if (!nav) return;
+
+  const narrow = window.matchMedia('(max-width: 860px)');
+  const sync = () => { nav.open = !narrow.matches; };
+  narrow.addEventListener('change', sync);
+  sync();
 })();

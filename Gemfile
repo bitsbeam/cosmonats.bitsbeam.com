@@ -4,3 +4,6 @@ source "https://rubygems.org"
 
 gem "rake"
 gem "webrick"
+gem "kramdown"
+gem "kramdown-parser-gfm"
+gem "rouge"

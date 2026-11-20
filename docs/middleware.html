@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Middleware — Cosmonats docs</title>
+  <meta name="description" content="Every job execution on a worker runs through the server middleware chain. A middleware gets the job instance (nil when class can&#39;t be loaded), its parsed payload, and the NATS mess">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Middleware</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html" class="is-active" aria-current="page">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Advanced usage</span>
+        <h1 class="docs-title">Middleware</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<h2 id="server-middleware"><a class="docs-anchor" href="#server-middleware" aria-hidden="true" tabindex="-1">#</a>Server middleware</h2>
+
+<p>Every job execution on a worker runs through the server middleware chain. A middleware gets the job instance (<code class="inline">nil</code>
+when class can’t be loaded), its parsed payload, and the NATS message, and yields to run the rest of the chain:</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="class TimingMiddleware
+  def initialize(threshold:)
+    @threshold = threshold
+  end
+
+  def call(job, data, message)
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    yield
+  ensure
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+    job.logger.warn(&quot;#{data[:class]} took #{elapsed.round(2)}s on #{message.metadata.stream}&quot;) if elapsed &gt; @threshold
+  end
+end
+
+Cosmo.configure do |config|
+  config.server_middleware do |chain|
+    chain.add TimingMiddleware, threshold: 5
+  end
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">TimingMiddleware</span>
+  <span class="tok-k">def</span> <span class="tok-m">initialize</span>(threshold:)
+    @threshold = threshold
+  <span class="tok-k">end</span>
+
+  <span class="tok-k">def</span> <span class="tok-m">call</span>(job, data, message)
+    started = <span class="tok-c">Process</span>.<span class="tok-m">clock_gettime</span>(<span class="tok-c">Process</span>::<span class="tok-c">CLOCK_MONOTONIC</span>)
+    <span class="tok-k">yield</span>
+  <span class="tok-k">ensure</span>
+    elapsed = <span class="tok-c">Process</span>.<span class="tok-m">clock_gettime</span>(<span class="tok-c">Process</span>::<span class="tok-c">CLOCK_MONOTONIC</span>) - started
+    job.<span class="tok-m">logger</span>.<span class="tok-m">warn</span>(<span class="tok-l">&quot;</span><span class="tok-l">#{</span>data[<span class="tok-s">:class</span>]<span class="tok-l">}</span><span class="tok-l"> took </span><span class="tok-l">#{</span>elapsed.<span class="tok-m">round</span>(<span class="tok-l">2</span>)<span class="tok-l">}</span><span class="tok-l">s on </span><span class="tok-l">#{</span>message.<span class="tok-m">metadata</span>.<span class="tok-m">stream</span><span class="tok-l">}</span><span class="tok-l">&quot;</span>) <span class="tok-k">if</span> elapsed &gt; @threshold
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span>
+
+<span class="tok-c">Cosmo</span>.<span class="tok-m">configure</span> <span class="tok-k">do</span> |config|
+  config.<span class="tok-m">server_middleware</span> <span class="tok-k">do</span> |chain|
+    chain.<span class="tok-m">add</span> <span class="tok-c">TimingMiddleware</span>, <span class="tok-s">threshold: </span><span class="tok-l">5</span>
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+<p>Register middleware at boot, before workers start (e.g. in a Rails initializer; loading <code class="inline">cosmo.yml</code> afterwards keeps
+it). The chain starts with Cosmo’s required middleware: <code class="inline">Cosmo::Middleware::Limit</code> (a job class’s <code class="inline">limit:</code>
+option), <code class="inline">Cosmo::Middleware::Totals</code> (processed/failed counts,
+one per execution), and <code class="inline">Cosmo::Middleware::Metrics</code> (the Metrics tab). <code class="inline">add</code> appends innermost, after them; <code class="inline">prepend</code>, <code class="inline">insert_before</code>, <code class="inline">insert_after</code>, and <code class="inline">remove</code>
+reorder the chain, so moving or removing the built-ins is at your own risk.
+A middleware that raises sends the job through the usual retry/DLQ path, and one that doesn’t yield skips the job
+and acks it. To put a job back for later instead, raise <code class="inline">Cosmo::Job::Requeue.new(delay_in_seconds)</code>: the job is
+redelivered without failing, though the redelivery still counts toward its <code class="inline">retry</code> and <code class="inline">max_deliver</code>.
+A fresh instance is built for every job. <code class="inline">perform_sync</code> doesn’t run the chain.</p>
+
+<h2 id="client-middleware"><a class="docs-anchor" href="#client-middleware" aria-hidden="true" tabindex="-1">#</a>Client middleware</h2>
+
+<p>The client chain runs where a job is enqueued (<code class="inline">perform_async</code>, <code class="inline">perform_in</code>, <code class="inline">perform_at</code>, <code class="inline">perform_bulk</code>, and
+the ActiveJob adapter), around the publish; for <code class="inline">perform_bulk</code>, yielding marks the job for its chunk’s publish. It starts empty, and a middleware gets the job class name, the payload Hash that will be
+published, and the stream the job runs on:</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="class RequestIdMiddleware
+  def call(_job_class, payload, _stream)
+    payload[:request_id] = Current.request_id
+    yield
+  end
+end
+
+Cosmo.configure do |config|
+  config.client_middleware { |chain| chain.add RequestIdMiddleware }
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">RequestIdMiddleware</span>
+  <span class="tok-k">def</span> <span class="tok-m">call</span>(_job_class, payload, _stream)
+    payload[<span class="tok-s">:request_id</span>] = <span class="tok-c">Current</span>.<span class="tok-m">request_id</span>
+    <span class="tok-k">yield</span>
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span>
+
+<span class="tok-c">Cosmo</span>.<span class="tok-m">configure</span> <span class="tok-k">do</span> |config|
+  config.<span class="tok-m">client_middleware</span> { |chain| chain.<span class="tok-m">add</span> <span class="tok-c">RequestIdMiddleware</span> }
+<span class="tok-k">end</span></code></pre>
+</figure>
+<p>Not yielding stops the publish: <code class="inline">perform_async</code> returns <code class="inline">nil</code>, and a batch the job was joining doesn’t wait for it.</p>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/13-middleware.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="error-handling.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Error handling</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="testing.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Testing</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="docs-toc" aria-label="On this page">
+      <p class="docs-nav__group">On this page</p>
+      <ul class="docs-toc__list">
+        <li><a href="#server-middleware">Server middleware</a></li>
+        <li><a href="#client-middleware">Client middleware</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jobs — Cosmonats docs</title>
+  <meta name="description" content="ruby class ReportJob include Cosmo::Job">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Jobs</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html" class="is-active" aria-current="page">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Core concepts</span>
+        <h1 class="docs-title">Jobs</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="class ReportJob
+  include Cosmo::Job
+
+  options(
+    stream: :critical,  # Stream name
+    retry: 5,           # Retry attempts
+    dead: true          # Send to dead letter queue on final failure
+  )
+
+  def perform(report_id)
+    logger.info &quot;Processing report #{report_id}&quot;
+    Report.find(report_id).generate!
+  rescue StandardError =&gt; e
+    logger.error &quot;Failed: #{e.message}&quot;
+    raise  # Triggers retry with exponential backoff
+  end
+end
+
+ReportJob.perform_async(42)                              # Enqueue now
+ReportJob.perform_in(30.minutes, 42)                     # Delayed
+ReportJob.perform_at(Time.parse(&quot;2026-01-25 10:00&quot;), 42) # Scheduled
+ReportJob.perform_sync(42)                               # Inline, no NATS (great for tests)
+ReportJob.set(stream: :critical, retry: 0).perform_async(42) # Per-call stream, retry, dead or subject
+ReportJob.perform_bulk([[1], [2], [3]])                  # One job per argument list, see below"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">ReportJob</span>
+  <span class="tok-k">include</span> <span class="tok-c">Cosmo</span>::<span class="tok-c">Job</span>
+
+  options(
+    <span class="tok-s">stream: :critical</span>,  <span class="tok-cm"># Stream name</span>
+    <span class="tok-s">retry: </span><span class="tok-l">5</span>,           <span class="tok-cm"># Retry attempts</span>
+    <span class="tok-s">dead: </span><span class="tok-k">true</span>          <span class="tok-cm"># Send to dead letter queue on final failure</span>
+  )
+
+  <span class="tok-k">def</span> <span class="tok-m">perform</span>(report_id)
+    logger.<span class="tok-m">info</span> <span class="tok-l">&quot;Processing report </span><span class="tok-l">#{</span>report_id<span class="tok-l">}</span><span class="tok-l">&quot;</span>
+    <span class="tok-c">Report</span>.<span class="tok-m">find</span>(report_id).<span class="tok-m">generate!</span>
+  <span class="tok-k">rescue</span> <span class="tok-c">StandardError</span> =&gt; e
+    logger.<span class="tok-m">error</span> <span class="tok-l">&quot;Failed: </span><span class="tok-l">#{</span>e.<span class="tok-m">message</span><span class="tok-l">}</span><span class="tok-l">&quot;</span>
+    <span class="tok-k">raise</span>  <span class="tok-cm"># Triggers retry with exponential backoff</span>
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span>
+
+<span class="tok-c">ReportJob</span>.<span class="tok-m">perform_async</span>(<span class="tok-l">42</span>)                              <span class="tok-cm"># Enqueue now</span>
+<span class="tok-c">ReportJob</span>.<span class="tok-m">perform_in</span>(<span class="tok-l">30</span>.<span class="tok-m">minutes</span>, <span class="tok-l">42</span>)                     <span class="tok-cm"># Delayed</span>
+<span class="tok-c">ReportJob</span>.<span class="tok-m">perform_at</span>(<span class="tok-c">Time</span>.<span class="tok-m">parse</span>(<span class="tok-l">&quot;2026-01-25 10:00&quot;</span>), <span class="tok-l">42</span>) <span class="tok-cm"># Scheduled</span>
+<span class="tok-c">ReportJob</span>.<span class="tok-m">perform_sync</span>(<span class="tok-l">42</span>)                               <span class="tok-cm"># Inline, no NATS (great for tests)</span>
+<span class="tok-c">ReportJob</span>.<span class="tok-m">set</span>(<span class="tok-s">stream: :critical</span>, <span class="tok-s">retry: </span><span class="tok-l">0</span>).<span class="tok-m">perform_async</span>(<span class="tok-l">42</span>) <span class="tok-cm"># Per-call stream, retry, dead or subject</span>
+<span class="tok-c">ReportJob</span>.<span class="tok-m">perform_bulk</span>([[<span class="tok-l">1</span>], [<span class="tok-l">2</span>], [<span class="tok-l">3</span>]])                  <span class="tok-cm"># One job per argument list, see below</span></code></pre>
+</figure>
+
+<p><code class="inline">perform_bulk</code> publishes a thousand jobs at a time without waiting on each ack, which is many times faster than
+calling <code class="inline">perform_async</code> in a loop. It takes the same options (<code class="inline">perform_bulk(list, in: 60)</code>, <code class="inline">set(...).perform_bulk</code>),
+joins the current batch, and returns the jids in order. When the stream refuses some jobs, e.g. a full <code class="inline">discard: new</code>
+stream, it raises <code class="inline">Cosmo::BulkEnqueueError</code>: its <code class="inline">jids</code> are <code class="inline">nil</code> for the jobs that weren’t enqueued, <code class="inline">errors</code> says why
+by index, and the chunks after the failing one aren’t published. Inside a <a href="batches.html">batch</a>, the refused jobs never
+join it, so rescue within <code class="inline">jobs</code> to resend them while the batch is still open:</p>
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="batch.jobs do
+  list = ids.zip
+  ReportJob.perform_bulk(list)
+rescue Cosmo::BulkEnqueueError =&gt; e
+  ReportJob.perform_bulk(list.reject.with_index { |_, i| e.jids[i] })
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>batch.<span class="tok-m">jobs</span> <span class="tok-k">do</span>
+  list = ids.<span class="tok-m">zip</span>
+  <span class="tok-c">ReportJob</span>.<span class="tok-m">perform_bulk</span>(list)
+<span class="tok-k">rescue</span> <span class="tok-c">Cosmo</span>::<span class="tok-c">BulkEnqueueError</span> =&gt; e
+  <span class="tok-c">ReportJob</span>.<span class="tok-m">perform_bulk</span>(list.<span class="tok-m">reject</span>.<span class="tok-m">with_index</span> { |_, i| e.<span class="tok-m">jids</span>[i] })
+<span class="tok-k">end</span></code></pre>
+</figure>
+<p>An error that is a <code class="inline">NATS::Timeout</code> means no ack came back, not that the job wasn’t stored, so resending it can run that
+job twice.</p>
+
+<p>Inside <code class="inline">perform</code>, the job instance knows about the message it came from:</p>
+
+<div class="table-wrap"><table class="docs-table">
+  <thead>
+    <tr>
+      <th>Accessor</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="inline">jid</code></td>
+      <td>Job id, returned by <code class="inline">perform_async</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">attempt</code></td>
+      <td>1-based delivery attempt</td>
+    </tr>
+    <tr>
+      <td><code class="inline">enqueued_at</code></td>
+      <td><code class="inline">Time</code> the job was enqueued; for a cron job, when NATS fired the schedule</td>
+    </tr>
+    <tr>
+      <td><code class="inline">scheduled_by</code></td>
+      <td>Subject of the cron schedule that fired the job, <code class="inline">nil</code> for jobs enqueued any other way</td>
+    </tr>
+    <tr>
+      <td><code class="inline">batch_id</code></td>
+      <td>Id of the <a href="batches.html">batch</a> the job belongs to, <code class="inline">nil</code> outside a batch</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/4-jobs.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="quick-start.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Quick start</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="streams.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Streams</span>
+        </a>
+      </nav>
+    </main>
+
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

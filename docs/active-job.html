@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Active Job — Cosmonats docs</title>
+  <meta name="description" content="Set the queue adapter in config/application.rb:">
+  <meta name="theme-color" content="#060913">
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/application.css">
+  <script src="../assets/application.js" defer></script>
+</head>
+<body class="docs-page">
+  <canvas class="starfield" data-starfield data-density="0.5" data-parallax="0.15" data-shooting-stars="false" aria-hidden="true"></canvas>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="../index.html" aria-label="Cosmonats home">
+      <img class="brand__logo" src="../assets/img/logo.svg" alt="" width="38" height="38">
+      <span class="brand__name">cosmonats</span>
+      <span class="brand__by">by bitsbeam</span>
+    </a>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a class="is-active" href="introduction.html" aria-current="page">docs</a>
+      <a href="../index.html#blog">blog</a>
+      <a class="nav-secondary" href="https://bitsbeam.com">bitsbeam ↗</a>
+      <a class="pill-link" href="https://github.com/bitsbeam/cosmonats">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <div class="docs">
+    <details class="docs-nav" open data-docs-nav>
+      <summary class="docs-nav__toggle"><span class="eyebrow">Docs</span> <span class="docs-nav__current">Active Job</span></summary>
+      <nav aria-label="Documentation">
+        <p class="docs-nav__version mono">cosmonats v0.10.0</p>
+        <p class="docs-nav__group">Getting started</p>
+        <ul class="docs-nav__list">
+          <li><a href="introduction.html">Introduction</a></li>
+          <li><a href="installation.html">Installation</a></li>
+          <li><a href="quick-start.html">Quick start</a></li>
+        </ul>
+        <p class="docs-nav__group">Core concepts</p>
+        <ul class="docs-nav__list">
+          <li><a href="jobs.html">Jobs</a></li>
+          <li><a href="streams.html">Streams</a></li>
+          <li><a href="configuration.html">Configuration</a></li>
+        </ul>
+        <p class="docs-nav__group">Advanced usage</p>
+        <ul class="docs-nav__list">
+          <li><a href="cron.html">Cron</a></li>
+          <li><a href="priority-queues-and-lanes.html">Priority queues and lanes</a></li>
+          <li><a href="batches.html">Batches</a></li>
+          <li><a href="concurrency-limiting.html">Concurrency limiting</a></li>
+          <li><a href="serializers.html">Custom serializers</a></li>
+          <li><a href="error-handling.html">Error handling</a></li>
+          <li><a href="middleware.html">Middleware</a></li>
+          <li><a href="testing.html">Testing</a></li>
+        </ul>
+        <p class="docs-nav__group">Integrations</p>
+        <ul class="docs-nav__list">
+          <li><a href="active-job.html" class="is-active" aria-current="page">Active Job</a></li>
+          <li><a href="sentry.html">Sentry</a></li>
+        </ul>
+        <p class="docs-nav__group">Operations</p>
+        <ul class="docs-nav__list">
+          <li><a href="cli.html">CLI</a></li>
+          <li><a href="deployment.html">Deployment</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="upgrading.html">Upgrading</a></li>
+        </ul>
+      </nav>
+    </details>
+
+    <main class="docs-main">
+      <header class="docs-header">
+        <span class="eyebrow eyebrow--orange">Integrations</span>
+        <h1 class="docs-title">Active Job</h1>
+      </header>
+
+      <article class="post-body docs-body">
+
+<h2 id="setup"><a class="docs-anchor" href="#setup" aria-hidden="true" tabindex="-1">#</a>Setup</h2>
+
+<p>Set the queue adapter in <code class="inline">config/application.rb</code>:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="config.active_job.queue_adapter = :cosmonats"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>config.<span class="tok-m">active_job</span>.<span class="tok-m">queue_adapter</span> = <span class="tok-s">:cosmonats</span></code></pre>
+</figure>
+
+<p>That’s it. The Railtie that ships with <code class="inline">cosmonats</code> registers the <code class="inline">:cosmonats</code> adapter and autoloads <code class="inline">config/cosmo.yml</code>.</p>
+
+<p>Outside Rails, require the adapter and set it yourself:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="require &quot;cosmo/active_job&quot;
+ActiveJob::Base.queue_adapter = Cosmo::ActiveJobAdapter::Adapter.new"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>require <span class="tok-l">&quot;cosmo/active_job&quot;</span>
+<span class="tok-c">ActiveJob</span>::<span class="tok-c">Base</span>.<span class="tok-m">queue_adapter</span> = <span class="tok-c">Cosmo</span>::<span class="tok-c">ActiveJobAdapter</span>::<span class="tok-c">Adapter</span>.<span class="tok-m">new</span></code></pre>
+</figure>
+
+<h2 id="queues"><a class="docs-anchor" href="#queues" aria-hidden="true" tabindex="-1">#</a>Queues</h2>
+
+<p>Use <code class="inline">queue_as</code> exactly as you would with any other ActiveJob backend:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="class ProcessPaymentJob &lt; ApplicationJob
+  queue_as :critical
+
+  def perform(order_id)
+    Order.find(order_id).charge!
+  end
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">ProcessPaymentJob</span> &lt; <span class="tok-c">ApplicationJob</span>
+  queue_as <span class="tok-s">:critical</span>
+
+  <span class="tok-k">def</span> <span class="tok-m">perform</span>(order_id)
+    <span class="tok-c">Order</span>.<span class="tok-m">find</span>(order_id).<span class="tok-m">charge!</span>
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+
+<p>Each queue name maps to a NATS <strong>stream</strong> of the same name. Declare every stream you plan to use in your <code class="inline">config/cosmo.yml</code>:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">yaml</span><button class="copy-btn" type="button" data-copy="stream_config: &amp;stream_config
+  storage: file
+  retention: workqueue
+  duplicate_window: 120
+  discard: new
+  allow_direct: true
+  subjects: [&quot;jobs.%{name}.&gt;&quot;]
+
+consumer_config: &amp;consumer_config
+  ack_policy: explicit
+  max_deliver: 30
+  max_ack_pending: 20
+  ack_wait: 60
+  subject: jobs.%{name}.&gt;
+
+setup:
+  jobs:
+    default: { &lt;&lt;: *stream_config }
+    critical: { &lt;&lt;: *stream_config }
+    mailers: { &lt;&lt;: *stream_config }
+
+consumers:
+  jobs:
+    default: { &lt;&lt;: *consumer_config, priority: 15 }
+    critical: { &lt;&lt;: *consumer_config, priority: 50 }
+    mailers: { &lt;&lt;: *consumer_config, priority: 10 }"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-s">stream_config</span>: &amp;stream_config
+  <span class="tok-s">storage</span>: <span class="tok-l">file</span>
+  <span class="tok-s">retention</span>: <span class="tok-l">workqueue</span>
+  <span class="tok-s">duplicate_window</span>: <span class="tok-l">120</span>
+  <span class="tok-s">discard</span>: <span class="tok-l">new</span>
+  <span class="tok-s">allow_direct</span>: <span class="tok-k">true</span>
+  <span class="tok-s">subjects</span>: [<span class="tok-l">&quot;</span><span class="tok-l">jobs.%{name}.&gt;&quot;</span>]
+
+<span class="tok-s">consumer_config</span>: &amp;consumer_config
+  <span class="tok-s">ack_policy</span>: <span class="tok-l">explicit</span>
+  <span class="tok-s">max_deliver</span>: <span class="tok-l">30</span>
+  <span class="tok-s">max_ack_pending</span>: <span class="tok-l">20</span>
+  <span class="tok-s">ack_wait</span>: <span class="tok-l">60</span>
+  <span class="tok-s">subject</span>: <span class="tok-l">jobs.%{name}.&gt;</span>
+
+<span class="tok-s">setup</span>:
+  <span class="tok-s">jobs</span>:
+    <span class="tok-s">default</span>: { &lt;&lt;: *stream_config }
+    <span class="tok-s">critical</span>: { &lt;&lt;: *stream_config }
+    <span class="tok-s">mailers</span>: { &lt;&lt;: *stream_config }
+
+<span class="tok-s">consumers</span>:
+  <span class="tok-s">jobs</span>:
+    <span class="tok-s">default</span>: { &lt;&lt;: *consumer_config, priority: 15 }
+    <span class="tok-s">critical</span>: { &lt;&lt;: *consumer_config, priority: 50 }
+    <span class="tok-s">mailers</span>: { &lt;&lt;: *consumer_config, priority: 10 }</code></pre>
+</figure>
+
+<p>The <code class="inline">scheduled</code> and <code class="inline">dead</code> streams are Cosmo’s own: <code class="inline">cosmo --setup</code> creates them, and they’re tuned in
+<code class="inline">Cosmo.configure</code> rather than in <code class="inline">cosmo.yml</code> (see <a href="configuration.html#service-streams">Configuration</a>).</p>
+
+<p>Provision streams (safe to run on every deploy):</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="cosmo -S"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>cosmo <span class="tok-s">-S</span></code></pre>
+</figure>
+
+<h2 id="delayed-jobs"><a class="docs-anchor" href="#delayed-jobs" aria-hidden="true" tabindex="-1">#</a>Delayed jobs</h2>
+
+<p><code class="inline">set(wait:)</code> and <code class="inline">set(wait_until:)</code> are fully supported via the built-in <code class="inline">scheduled</code> stream, with no extra
+configuration:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="ProcessPaymentJob.set(wait: 5.minutes).perform_later(order.id)
+ProcessPaymentJob.set(wait_until: Date.tomorrow.noon).perform_later(order.id)"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-c">ProcessPaymentJob</span>.<span class="tok-m">set</span>(<span class="tok-s">wait: </span><span class="tok-l">5</span>.<span class="tok-m">minutes</span>).<span class="tok-m">perform_later</span>(order.<span class="tok-m">id</span>)
+<span class="tok-c">ProcessPaymentJob</span>.<span class="tok-m">set</span>(<span class="tok-s">wait_until: </span><span class="tok-c">Date</span>.<span class="tok-m">tomorrow</span>.<span class="tok-m">noon</span>).<span class="tok-m">perform_later</span>(order.<span class="tok-m">id</span>)</code></pre>
+</figure>
+
+<h2 id="cosmo-specific-options"><a class="docs-anchor" href="#cosmo-specific-options" aria-hidden="true" tabindex="-1">#</a>Cosmo-specific options</h2>
+
+<p><code class="inline">cosmo_options</code> is available on every ActiveJob class. Use it to set NATS-level retry and dead-letter behavior:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="class ProcessPaymentJob &lt; ApplicationJob
+  queue_as :critical
+  cosmo_options retry: 5, dead: true
+
+  def perform(order_id)
+    Order.find(order_id).charge!
+  end
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">ProcessPaymentJob</span> &lt; <span class="tok-c">ApplicationJob</span>
+  queue_as <span class="tok-s">:critical</span>
+  cosmo_options <span class="tok-s">retry: </span><span class="tok-l">5</span>, <span class="tok-s">dead: </span><span class="tok-k">true</span>
+
+  <span class="tok-k">def</span> <span class="tok-m">perform</span>(order_id)
+    <span class="tok-c">Order</span>.<span class="tok-m">find</span>(order_id).<span class="tok-m">charge!</span>
+  <span class="tok-k">end</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+
+<div class="table-wrap"><table class="docs-table">
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Default</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="inline">retry:</code></td>
+      <td><code class="inline">3</code></td>
+      <td>How many times Cosmonats retries the job at the NATS level before giving up</td>
+    </tr>
+    <tr>
+      <td><code class="inline">dead:</code></td>
+      <td><code class="inline">true</code></td>
+      <td>Move the message to the dead-letter stream after retries are exhausted</td>
+    </tr>
+    <tr>
+      <td><code class="inline">stream:</code></td>
+      <td><em>(queue_name)</em></td>
+      <td>Override the NATS stream regardless of <code class="inline">queue_as</code></td>
+    </tr>
+    <tr>
+      <td><code class="inline">retry_in:</code></td>
+      <td><em>(backoff)</em></td>
+      <td><code class="inline">-&gt;(count, exception) { seconds }</code>, see <a href="error-handling.html#retry-delay">Retry delay</a></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Options are inherited and can be overridden in subclasses:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="class UrgentPaymentJob &lt; ProcessPaymentJob
+  cosmo_options retry: 1   # inherits dead: true, overrides retry
+end"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-k">class</span> <span class="tok-c">UrgentPaymentJob</span> &lt; <span class="tok-c">ProcessPaymentJob</span>
+  cosmo_options <span class="tok-s">retry: </span><span class="tok-l">1</span>   <span class="tok-cm"># inherits dead: true, overrides retry</span>
+<span class="tok-k">end</span></code></pre>
+</figure>
+
+<blockquote class="docs-quote">
+  <p><strong><code class="inline">retry_on</code> vs <code class="inline">cosmo_options retry:</code></strong> — these are two independent retry
+mechanisms at different layers:</p>
+
+  <ul>
+    <li><code class="inline">retry_on</code> is handled entirely inside <code class="inline">Executor#perform</code> by ActiveJob before
+the method returns. From Cosmonats’ perspective the job <em>succeeded</em> — the
+message is acked and removed from the stream. ActiveJob re-enqueues a brand
+new message for each attempt.</li>
+    <li><code class="inline">cosmo_options retry:</code> tells Cosmonats how many times to redeliver the
+<em>same</em> NATS message when <code class="inline">Executor#perform</code> raises an unhandled exception
+(i.e. one not caught by <code class="inline">retry_on</code>).</li>
+  </ul>
+
+  <p>In practice: use <code class="inline">retry_on</code> for expected, recoverable errors (network blips,
+rate limits) and <code class="inline">cosmo_options retry:</code> as the last-resort safety net for
+anything unexpected. Avoid setting both for the same error class, or you will
+get retries multiplied across both layers.</p>
+</blockquote>
+
+<blockquote class="docs-quote">
+  <p><strong><code class="inline">Cosmo::Batch</code> and ActiveJob</strong> — the ActiveJob adapter enqueues through its
+own <code class="inline">Job::Data</code> construction, not <code class="inline">Cosmo::Job#perform</code>, so <code class="inline">perform_later</code>
+calls made inside a <code class="inline">batch.jobs { }</code> block are not currently tracked by the
+batch. Use <code class="inline">Cosmo::Job</code>-based jobs (<code class="inline">perform_async</code>/<code class="inline">perform_at</code>/<code class="inline">perform_in</code>)
+for anything that needs to participate in a batch.</p>
+</blockquote>
+
+<h2 id="running-the-worker"><a class="docs-anchor" href="#running-the-worker" aria-hidden="true" tabindex="-1">#</a>Running the worker</h2>
+
+<p>The Cosmo worker is a separate process. In a Rails app the CLI auto-discovers
+<code class="inline">config/boot.rb</code> and <code class="inline">config/environment.rb</code>:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="bundle exec cosmo -C config/cosmo.yml -c 10 jobs"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>bundle <span class="tok-m">exec </span>cosmo <span class="tok-s">-C</span> config/cosmo.yml <span class="tok-s">-c</span> 10 <span class="tok-m">jobs</span></code></pre>
+</figure>
+
+<div class="table-wrap"><table class="docs-table">
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="inline">-C config/cosmo.yml</code></td>
+      <td>Cosmo config file</td>
+    </tr>
+    <tr>
+      <td><code class="inline">-c 10</code></td>
+      <td>Worker threads</td>
+    </tr>
+    <tr>
+      <td><code class="inline">jobs</code></td>
+      <td>Run job processor only (omit to also run stream processors)</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>Procfile</strong>:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">text</span><button class="copy-btn" type="button" data-copy="web:    bundle exec puma -C config/puma.rb
+worker: bundle exec cosmo -C config/cosmo.yml -c 5 jobs"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>web:    bundle exec puma -C config/puma.rb
+worker: bundle exec cosmo -C config/cosmo.yml -c 5 jobs</code></pre>
+</figure>
+
+<h2 id="testing"><a class="docs-anchor" href="#testing" aria-hidden="true" tabindex="-1">#</a>Testing</h2>
+
+<p>Use the built-in <code class="inline">:test</code> adapter in your test suite:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="# spec/rails_helper.rb  (or test/test_helper.rb)
+config.active_job.queue_adapter = :test"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-cm"># spec/rails_helper.rb  (or test/test_helper.rb)</span>
+config.<span class="tok-m">active_job</span>.<span class="tok-m">queue_adapter</span> = <span class="tok-s">:test</span></code></pre>
+</figure>
+
+<p>With the test adapter, <code class="inline">perform_later</code> enqueues the job into an in-memory queue
+that you can assert against:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="expect { ProcessPaymentJob.perform_later(order.id) }
+  .to have_enqueued_job(ProcessPaymentJob).with(order.id)"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>expect { <span class="tok-c">ProcessPaymentJob</span>.<span class="tok-m">perform_later</span>(order.<span class="tok-m">id</span>) }
+  .<span class="tok-m">to</span> have_enqueued_job(<span class="tok-c">ProcessPaymentJob</span>).<span class="tok-m">with</span>(order.<span class="tok-m">id</span>)</code></pre>
+</figure>
+
+<p>To run job logic synchronously without any queue:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">ruby</span><button class="copy-btn" type="button" data-copy="ProcessPaymentJob.perform_now(order.id)"><span data-copy-label>copy</span></button></figcaption>
+<pre><code><span class="tok-c">ProcessPaymentJob</span>.<span class="tok-m">perform_now</span>(order.<span class="tok-m">id</span>)</code></pre>
+</figure>
+
+<h2 id="dead-letter-queue-dlq"><a class="docs-anchor" href="#dead-letter-queue-dlq" aria-hidden="true" tabindex="-1">#</a>Dead-letter queue (DLQ)</h2>
+
+<p>When a job exhausts all retries, Cosmo moves it to the <code class="inline">dead</code> stream under the
+subject <code class="inline">jobs.dead.cosmo-active_job_adapter-executor</code>. Inspect failed jobs with
+the NATS CLI or the built-in monitoring UI:</p>
+
+<figure class="code-block docs-code">
+  <figcaption class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn" type="button" data-copy="nats stream view dead"><span data-copy-label>copy</span></button></figcaption>
+<pre><code>nats stream view dead</code></pre>
+</figure>
+      </article>
+
+      <p class="docs-edit mono"><a href="https://github.com/bitsbeam/cosmonats/blob/main/docs/15-active-job.md">Edit this page on GitHub ↗</a></p>
+
+      <nav class="post-pager docs-pager" aria-label="Previous and next page">
+        <a class="pager-card" href="testing.html">
+          <span class="pager-card__label">← Previous</span>
+          <span class="pager-card__title">Testing</span>
+        </a>
+        <a class="pager-card pager-card--primary" href="sentry.html">
+          <span class="pager-card__label">Next →</span>
+          <span class="pager-card__title">Sentry</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="docs-toc" aria-label="On this page">
+      <p class="docs-nav__group">On this page</p>
+      <ul class="docs-toc__list">
+        <li><a href="#setup">Setup</a></li>
+        <li><a href="#queues">Queues</a></li>
+        <li><a href="#delayed-jobs">Delayed jobs</a></li>
+        <li><a href="#cosmo-specific-options">Cosmo-specific options</a></li>
+        <li><a href="#running-the-worker">Running the worker</a></li>
+        <li><a href="#testing">Testing</a></li>
+        <li><a href="#dead-letter-queue-dlq">Dead-letter queue (DLQ)</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <span>© 2026 <a href="https://bitsbeam.com">bitsbeam</a> · cosmonats is MIT licensed</span>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/bitsbeam/cosmonats">GitHub</a>
+      <a href="https://rubygems.org/gems/cosmonats">RubyGems</a>
+      <a href="../index.html">Home</a>
+    </nav>
+  </footer>
+</body>
+</html>

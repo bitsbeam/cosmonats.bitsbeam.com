@@ -1,0 +1,3 @@
+[submodule "projects/cosmonats"]
+	path = projects/cosmonats
+	url = git@github.com:bitsbeam/cosmonats.git
