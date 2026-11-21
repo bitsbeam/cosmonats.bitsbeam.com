@@ -22,55 +22,73 @@
  *
  * Usage: <canvas class="starfield" data-starfield
  *                data-density="1" data-parallax="0.25" data-shooting-stars="true"></canvas>
+ *
+ * Performance: stars are batched by colour and brightness level, so a frame is
+ * ~40 fill calls instead of one per star; tiny stars are squares, not arcs.
  */
 (function () {
   'use strict';
 
   const COLORS = ['255,255,255', '255,255,255', '255,255,255', '190,240,255', '255,214,170'];
+  const PALETTE = ['255,255,255', '190,240,255', '255,214,170'];
+  const LEVELS = 12;   // brightness steps per colour
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const STYLES = PALETTE.map((c) => Array.from({ length: LEVELS }, (_, k) => `rgba(${c},${((k + 0.5) / LEVELS).toFixed(3)})`));
 
   function createStarfield(canvas) {
     const ctx = canvas.getContext('2d');
     const density = parseFloat(canvas.dataset.density || '1');
     const parallax = parseFloat(canvas.dataset.parallax || '0.25');
     const shootingStars = canvas.dataset.shootingStars !== 'false' && !reduceMotion;
-    let stars = [];
-    let shooting = null;
+    let stars = [], shooting = null, w = 0, h = 0;
+    const buckets = PALETTE.map(() => Array.from({ length: LEVELS }, () => []));
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const w = window.innerWidth, h = window.innerHeight;
+      w = window.innerWidth; h = window.innerHeight;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const count = Math.round((w * h) / 3200 * density);
-      stars = Array.from({ length: count }, () => ({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        depth: 0.1 + Math.random() * 0.9,
-        r: Math.random() < 0.08 ? 1.6 + Math.random() : 0.4 + Math.random() * 0.9,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.5 + Math.random() * 2,
-        color: COLORS[(Math.random() * COLORS.length) | 0]
-      }));
+      stars = Array.from({ length: count }, () => {
+        const r = Math.random() < 0.08 ? 1.6 + Math.random() : 0.4 + Math.random() * 0.9;
+        return {
+          x: Math.random() * w, y: Math.random() * h,
+          depth: 0.1 + Math.random() * 0.9, r,
+          phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 2,
+          tw: r > 1.5 ? 0.35 : 0.21,
+          c: PALETTE.indexOf(COLORS[(Math.random() * COLORS.length) | 0])
+        };
+      });
     }
 
     function draw(t) {
-      const w = window.innerWidth, h = window.innerHeight, sy = window.scrollY;
+      const sy = window.scrollY;
       const time = reduceMotion ? 0 : t / 1000;
       ctx.clearRect(0, 0, w, h);
 
       for (const s of stars) {
-        const y = (((s.y - sy * s.depth * parallax) % h) + h) % h;
-        const a = 0.45 + Math.sin(time * s.speed + s.phase) * 0.35 * (s.r > 1.5 ? 1 : 0.6);
-        ctx.fillStyle = `rgba(${s.color},${Math.max(0.08, a * (0.5 + s.depth * 0.5))})`;
+        const a = Math.max(0.08, (0.45 + Math.sin(time * s.speed + s.phase) * s.tw) * (0.5 + s.depth * 0.5));
+        s.py = (((s.y - sy * s.depth * parallax) % h) + h) % h;
+        buckets[s.c][Math.min(LEVELS - 1, (a * LEVELS) | 0)].push(s);
+      }
+      for (let c = 0; c < PALETTE.length; c++) for (let k = 0; k < LEVELS; k++) {
+        const list = buckets[c][k];
+        if (!list.length) continue;
+        ctx.fillStyle = STYLES[c][k];
         ctx.beginPath();
-        ctx.arc(s.x, y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-        if (s.r > 1.6) { // four-point sparkle on the brightest stars
-          ctx.fillRect(s.x - s.r * 2.5, y - 0.4, s.r * 5, 0.8);
-          ctx.fillRect(s.x - 0.4, y - s.r * 2.5, 0.8, s.r * 5);
+        for (const s of list) {
+          if (s.r < 1.2) { const d = s.r * 1.8; ctx.rect(s.x - d / 2, s.py - d / 2, d, d); }
+          else {
+            ctx.moveTo(s.x + s.r, s.py); ctx.arc(s.x, s.py, s.r, 0, Math.PI * 2);
+            if (s.r > 1.6) {      // four-point sparkle on the brightest stars
+              ctx.rect(s.x - s.r * 2.5, s.py - 0.4, s.r * 5, 0.8);
+              ctx.rect(s.x - 0.4, s.py - s.r * 2.5, 0.8, s.r * 5);
+            }
+          }
         }
+        ctx.fill();
+        list.length = 0;
       }
 
       if (shootingStars) {
