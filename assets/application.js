@@ -12,6 +12,7 @@
  *   4. Copy              [data-copy]                 copy-to-clipboard buttons
  *   5. Reading progress  [data-reading-progress]     progress bar on posts
  *   6. Docs nav          [data-docs-nav]             collapsible sidebar on docs pages
+ *   7. Reduced motion    svg                         pauses SVG animations when the user asks for less motion
  */
 
 
@@ -357,4 +358,13 @@
   const sync = () => { nav.open = !narrow.matches; };
   narrow.addEventListener('change', sync);
   sync();
+})();
+
+
+/* 7. Reduced motion for SVG animations ========================================= */
+/* CSS can't pause SVG <animate> elements, so honour prefers-reduced-motion here. */
+(function () {
+  'use strict';
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('svg').forEach((s) => s.pauseAnimations && s.pauseAnimations());
 })();

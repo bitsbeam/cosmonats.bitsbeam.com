@@ -5,7 +5,7 @@
    Contents
      1. Base        tokens (CSS variables), reset, utilities, keyframes
      2. Components  nav, buttons, panels, code + syntax, post cards, pager, footer
-     3. Home        hero + UFO scene, beam, blog teaser, journey, code, about
+     3. Home        hero (UFO scene / spacewalk), beam, blog teaser, journey, code, about
      4. Post        article layout, crew note, comparison table, docs pages
      5. Sites       per-site bits: cosmonats rocket hero, bitsbeam theme + fleet
 
@@ -1052,19 +1052,20 @@ code.inline {
 
 /* 5. Sites ================================================================= */
 
-/* Cosmonats: rocket lifting off (hero art) -------------------------------- */
-.rocket-scene {
+/* Cosmonats: spacewalk — cosmonaut tethered to a satellite (hero art) ----
+   Motion is SVG <animate>/<animateTransform> on one shared 16s timeline; each figure rotates
+   around its own tether hook, so the cable's ends never detach. */
+.spacewalk {
   position: relative;
   width: 100%;
   max-width: 520px;
   justify-self: center;
   aspect-ratio: 400 / 480;
 }
-.rocket-scene svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.rocket-scene__rocket { animation: bob 2.6s ease-in-out infinite; }
-.rocket-scene__flame { transform-box: fill-box; transform-origin: 50% 0; animation: flame .18s ease-in-out infinite; }
-.rocket-scene__puff { transform-box: fill-box; transform-origin: center; animation: puff 2.4s ease-in-out infinite; }
-.rocket-scene__planet { animation: bob 7s ease-in-out infinite; }
+.spacewalk > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.spacewalk__planet { animation: bob 11s ease-in-out infinite; }
+.spacewalk__blink { animation: blink 1.8s infinite; }
+@media (prefers-reduced-motion: reduce) { .spacewalk * { animation: none !important; } }
 
 /* bitsbeam: alien-green accent. <body data-theme="bitsbeam"> ------------- */
 /* --color-cyan is the site accent; the theme just swaps its value. */
