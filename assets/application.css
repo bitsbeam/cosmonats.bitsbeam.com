@@ -633,7 +633,7 @@ code.inline {
   position: absolute; inset: -18%; border-radius: 50%;
   background: radial-gradient(closest-side, rgba(127, 227, 255, .22), rgba(127, 227, 255, .08) 60%, rgba(127, 227, 255, 0));
 }
-.cosmonaut__body { position: relative; display: block; width: clamp(96px, 10vw, 150px); height: auto; }
+.cosmonaut__body { position: relative; display: block; width: clamp(84px, 7.75vw, 116px); height: auto; }
 @media (max-width: 760px) { .cosmonaut__body { width: 84px; } }
 
 .journey__stops { list-style: none; padding: 0; }
