@@ -8,11 +8,14 @@
  * quietly does nothing when the hook isn't on the current page:
  *
  *   1. Starfield         <canvas data-starfield>     twinkling parallax stars
- *   3. Journey           .journey [data-journey-map] scroll-driven rocket / UFO
+ *   3. Journey           [data-journey-map]          cosmonaut + tether floating along the waypoint path
  *   4. Copy              [data-copy]                 copy-to-clipboard buttons
  *   5. Reading progress  [data-reading-progress]     progress bar on posts
  *   6. Docs nav          [data-docs-nav]             collapsible sidebar on docs pages
  *   7. Reduced motion    svg                         pauses SVG animations when the user asks for less motion
+ *
+ * (Pure CSS, no JS: the bitsbeam beam digits + cow-abduction / moo / blink sequence,
+ *  and the cosmonats waypoint-card reveal — see application.css.)
  */
 
 
@@ -119,42 +122,49 @@
 
 /* 3. Journey =============================================================== */
 /**
- * Journey — draws a zigzag path through every waypoint and flies a vehicle
- * (rocket or UFO) along it as the user scrolls. The waypoint closest to the
- * vehicle gets `.is-active`.
+ * Journey — draws a zigzag path through every waypoint. A cosmonaut drifts
+ * along it as the user scrolls, wandering widely (±150px) and tumbling around the line,
+ * trailing a tether that starts in the void behind him and sways in slow waves.
+ * The marker nearest to him gets `.is-active`.
  *
- * Markup contract (see index.html):
- *   <section class="journey" data-vehicle="rocket|ufo" data-trail="true|false">
- *     <div data-journey-map>
- *       <svg class="journey__svg"><path data-journey-track/><path data-journey-trail/></svg>
- *       <div data-journey-markers></div>
- *       <ol><li data-stop><article data-card>…</article></li>…</ol>
- *       <div data-journey-vehicle>…</div>
- *     </div>
- *   </section>
+ * Performance: one transform write + two short path writes per frame, no layout
+ * reads in the loop (positions are computed, not measured), and the loop only
+ * runs while the section is on screen.
+ *
+ * Markup contract (see cosmonats-web/index.html):
+ *   <div data-journey-map>
+ *     <svg class="journey__svg"> … <path data-journey-track/>
+ *       <linearGradient data-journey-fade/>×2
+ *       <path data-journey-tether-edge/><path data-journey-tether/> </svg>
+ *     <div data-journey-markers></div>
+ *     <ol><li data-stop>…</li>…</ol>
+ *     <div data-journey-cosmonaut>…</div>
+ *   </div>
  */
 (function () {
   'use strict';
 
-  const section = document.querySelector('.journey');
-  const map = section && section.querySelector('[data-journey-map]');
+  const map = document.querySelector('[data-journey-map]');
   if (!map) return;
 
   const svg = map.querySelector('.journey__svg');
   const track = map.querySelector('[data-journey-track]');
-  const trail = map.querySelector('[data-journey-trail]');
+  const tether = map.querySelector('[data-journey-tether]');
+  const tetherEdge = map.querySelector('[data-journey-tether-edge]');
+  const fades = Array.from(map.querySelectorAll('[data-journey-fade]'));
   const markersEl = map.querySelector('[data-journey-markers]');
-  const vehicle = map.querySelector('[data-journey-vehicle]');
+  const astro = map.querySelector('[data-journey-cosmonaut]');
   const stops = Array.from(map.querySelectorAll('[data-stop]'));
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const NARROW = 760;       // below this, the path hugs the edges and markers hide
-  const EASE_POS = 0.09;    // how quickly the vehicle catches up with scroll
-  const EASE_ANGLE = 0.12;  // how quickly it turns
+  const NARROW = 760;     // below this, the path hugs the edges and markers hide
+  const EASE_POS = 0.07;  // how lazily he catches up with the scroll (zero-g = unhurried)
+  const STEP = 8;         // path sampling resolution, px
+  const TETHER = 650;     // visible tether length behind him, px of path
+  const BELT = [-0.03, 0.03]; // tether hook, relative to his size, from his centre
 
-  let height = 0, length = 0, samples = [], markers = [];
-  let current = 0, angle = -90, forward = true;
-
-  const isUfo = () => section.dataset.vehicle === 'ufo';
+  let height = 0, length = 0, pts = [], markers = [], stopY = [], active = -1;
+  let mapTop = 0, mapW = 0, w = 0, h = 0, current = 0, running = false;
 
   function layout() {
     const width = map.clientWidth;
@@ -163,23 +173,23 @@
 
     const points = [{ x: width / 2, y: 0 }];
     markersEl.textContent = '';
-    markers = [];
-
+    markers = []; stopY = []; active = -1;
     stops.forEach((stop, i) => {
       const y = stop.offsetTop + stop.offsetHeight / 2;
       const left = i % 2 === 0;
       const x = narrow ? (left ? 36 : width - 36) : (left ? width * 0.2 : width * 0.8);
       points.push({ x, y });
-
+      stopY.push([y, stop.offsetHeight * 0.42]);
+      let m = null;
       if (!narrow) {
-        const m = document.createElement('span');
+        m = document.createElement('span');
         m.className = 'journey__marker';
         m.style.left = x + 'px';
         m.style.top = (y + 92) + 'px';
         m.textContent = String(i + 1).padStart(2, '0');
         markersEl.appendChild(m);
       }
-      markers.push(markersEl.lastElementChild && !narrow ? markersEl.lastElementChild : null);
+      markers.push(m);
     });
     points.push({ x: width / 2, y: height });
 
@@ -188,73 +198,89 @@
       const p = points[i - 1], q = points[i], dy = q.y - p.y;
       d += ` C${p.x} ${p.y + dy * 0.55} ${q.x} ${q.y - dy * 0.55} ${q.x} ${q.y}`;
     }
-
     svg.setAttribute('width', width);
     svg.setAttribute('height', height);
     track.setAttribute('d', d);
-    trail.setAttribute('d', d);
-    sample();
-    stops.forEach((s) => { s._active = undefined; });
+
+    length = track.getTotalLength();
+    pts = [];
+    for (let l = 0; l <= length; l += STEP) {
+      const a = track.getPointAtLength(l), b = track.getPointAtLength(Math.min(length, l + 1));
+      const dx = b.x - a.x, dy = b.y - a.y, n = Math.hypot(dx, dy) || 1;
+      pts.push({ l, x: a.x, y: a.y, nx: -dy / n, ny: dx / n });
+    }
+    mapTop = map.getBoundingClientRect().top + window.scrollY;
+    w = astro.offsetWidth; h = astro.offsetHeight; mapW = width;
   }
 
-  // Pre-sample the path so we can map a scroll Y to a distance along it.
-  function sample() {
-    length = trail.getTotalLength();
-    const N = 800;
-    samples = [];
-    for (let i = 0; i <= N; i++) {
-      const l = length * i / N;
-      samples.push({ l, y: trail.getPointAtLength(l).y });
-    }
-    trail.style.strokeDasharray = length;
-    trail.style.strokeDashoffset = length - current;
+  // point on the path at length l, interpolated between samples (no snapping → no twitch at slow speeds)
+  function at(l) {
+    const f = Math.max(0, Math.min(pts.length - 1, l / STEP)), i = Math.min(pts.length - 2, f | 0), k = f - i;
+    const a = pts[i], b = pts[i + 1] || a;
+    return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, nx: a.nx + (b.nx - a.nx) * k, ny: a.ny + (b.ny - a.ny) * k };
   }
+  const smooth = (k) => k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k);
 
-  function lengthForY(y) {
-    if (!samples.length) return 0;
-    let lo = 0, hi = samples.length - 1;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (samples[mid].y < y) lo = mid + 1; else hi = mid;
-    }
+  function lengthForY(y) {   // first point on the path at this height (the path only goes down)
+    let lo = 0, hi = pts.length - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (pts[mid].y < y) lo = mid + 1; else hi = mid; }
     if (lo === 0) return 0;
-    const a = samples[lo - 1], b = samples[lo];
-    const k = Math.min(1, Math.max(0, (y - a.y) / ((b.y - a.y) || 1)));
-    return a.l + (b.l - a.l) * k;
+    const a = pts[lo - 1], b = pts[lo];
+    return a.l + (b.l - a.l) * Math.min(1, Math.max(0, (y - a.y) / ((b.y - a.y) || 1)));
   }
 
-  function tick() {
-    if (length) {
-      const rect = map.getBoundingClientRect();
-      const targetY = Math.min(height, Math.max(0, window.innerHeight * 0.5 - rect.top));
-      const diff = lengthForY(targetY) - current;
-      if (Math.abs(diff) > 4) forward = diff > 0;
-      current += diff * EASE_POS;
+  function frame(now) {
+    if (!running) return;
+    const t = still ? 0 : now / 1000;
 
-      const l = Math.min(length - 1, Math.max(0, current));
-      const a = trail.getPointAtLength(l), b = trail.getPointAtLength(l + 1);
+    const targetY = Math.min(height, Math.max(0, window.innerHeight * 0.5 - (mapTop - window.scrollY)));
+    const goal = lengthForY(targetY);
+    current += (goal - current) * EASE_POS;
+    if (Math.abs(goal - current) < 0.05) current = goal;   // settle exactly, no endless sub-pixel creep
+    const p = at(current);
 
-      // Rocket points along the path (flips when scrolling back); UFO just tilts.
-      const target = isUfo()
-        ? Math.max(-22, Math.min(22, (b.x - a.x) * 30))
-        : Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI + 90 + (forward ? 0 : 180);
-      angle += (((target - angle + 540) % 360) - 180) * EASE_ANGLE;
+    // free zero-g wander around the path + tumble (unrelated periods, so it never visibly repeats);
+    // scaled down on narrow screens and kept inside the map so he never drifts off-screen
+    const sc = Math.min(1, mapW / 1200);
+    const fx = sc * (110 * Math.sin(t * 0.31) + 42 * Math.sin(t * 0.87 + 1.7));
+    const fy = sc * (72 * Math.sin(t * 0.47 + 2.1) + 26 * Math.sin(t * 1.21 + 0.4));
+    const ang = 26 * Math.sin(t * 0.23) + 10 * Math.sin(t * 0.67 + 1.1);
+    const cx = Math.min(mapW - w / 2 - 8, Math.max(w / 2 + 8, p.x + fx)), cy = p.y + fy;
+    astro.style.transform = `translate3d(${(cx - w / 2).toFixed(2)}px, ${(cy - h / 2).toFixed(2)}px, 0) rotate(${ang.toFixed(2)}deg)`;
 
-      vehicle.style.transform =
-        `translate(${a.x - vehicle.offsetWidth / 2}px, ${a.y - vehicle.offsetHeight / 2}px) rotate(${angle}deg)`;
-      trail.style.strokeDashoffset = length - current;
+    // belt hook, rotated with him
+    const r = ang * Math.PI / 180, bx = BELT[0] * w, by = BELT[1] * h;
+    const hx = cx + bx * Math.cos(r) - by * Math.sin(r), hy = cy + bx * Math.sin(r) + by * Math.cos(r);
 
-      stops.forEach((stop, i) => {
-        const cy = stop.offsetTop + stop.offsetHeight / 2;
-        const active = Math.abs(cy - a.y) < stop.offsetHeight * 0.42;
-        if (stop._active === active) return;
-        stop._active = active;
-        const card = stop.querySelector('[data-card]');
-        if (card) card.classList.toggle('is-active', active);
-        if (markers[i]) markers[i].classList.toggle('is-active', active);
-      });
+    // tether: the last TETHER px of path behind him, swaying, hooked onto the belt at the near end
+    const L1 = current, L0 = Math.max(0, L1 - TETHER), span = L1 - L0;
+    const pe = at(L1), dx = hx - pe.x, dy = hy - pe.y;
+    const n = Math.max(4, Math.ceil(span / 22));
+    let d = '', prev = null;
+    for (let i = 0; i <= n; i++) {
+      const u = i / n, l = L0 + span * u, q = at(l);
+      const sway = still ? 0 : (34 * Math.sin(l / 120 - t * 0.9) + 14 * Math.sin(l / 47 + t * 0.6)) * Math.sin(Math.PI * Math.min(1, u * 1.15));
+      const k = smooth((u - 0.35) / 0.65);            // drift towards the hook over the near two-thirds
+      const x = q.x + q.nx * sway + dx * k, y = q.y + q.ny * sway + dy * k;
+      if (i === 0) d = `M${x.toFixed(1)} ${y.toFixed(1)}`;
+      else if (i === n) d += ` L${hx.toFixed(1)} ${hy.toFixed(1)}`;
+      else d += ` Q${prev[0].toFixed(1)} ${prev[1].toFixed(1)} ${((prev[0] + x) / 2).toFixed(1)} ${((prev[1] + y) / 2).toFixed(1)}`;
+      prev = [x, y];
     }
-    requestAnimationFrame(tick);
+    tether.setAttribute('d', d);
+    tetherEdge.setAttribute('d', d);
+    const g = [d.slice(1, d.indexOf(' Q')).split(' '), hx.toFixed(0), hy.toFixed(0)];  // gradient: far end → hook
+    for (const f of fades) { f.setAttribute('x1', g[0][0]); f.setAttribute('y1', g[0][1]); f.setAttribute('x2', g[1]); f.setAttribute('y2', g[2]); }
+
+    // active marker: only touch the DOM when it changes
+    let idx = -1;
+    for (let i = 0; i < stopY.length; i++) if (Math.abs(stopY[i][0] - p.y) < stopY[i][1]) { idx = i; break; }
+    if (idx !== active) {
+      if (markers[active]) markers[active].classList.remove('is-active');
+      if (markers[idx]) markers[idx].classList.add('is-active');
+      active = idx;
+    }
+    requestAnimationFrame(frame);
   }
 
   let pending = false;
@@ -263,11 +289,17 @@
     pending = true;
     requestAnimationFrame(() => { pending = false; layout(); });
   };
-
   new ResizeObserver(scheduleLayout).observe(map);
+  window.addEventListener('resize', scheduleLayout);
   if (document.fonts) document.fonts.ready.then(scheduleLayout);
   layout();
-  requestAnimationFrame(tick);
+  current = lengthForY(Math.max(0, window.innerHeight * 0.5 - (mapTop - window.scrollY)));
+
+  // only animate while the section is on screen
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !running) { running = true; requestAnimationFrame(frame); }
+    else if (!e.isIntersecting) running = false;
+  }, { rootMargin: '200px 0px' }).observe(map);
 })();
 
 

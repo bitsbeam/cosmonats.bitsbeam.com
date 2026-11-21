@@ -162,8 +162,8 @@
     </section>
 
     <!-- ===================== Journey ===================== -->
-    <!-- data-vehicle: "rocket" | "ufo"   data-trail: "true" | "false" -->
-    <section id="journey" class="journey" data-vehicle="rocket" data-trail="true" aria-labelledby="journey-title">
+    <!-- a cosmonaut floats along the waypoint path in zero gravity, trailing a tether that starts in the void -->
+    <section id="journey" class="journey" aria-labelledby="journey-title">
       <div class="journey__intro">
         <p class="eyebrow eyebrow--orange">Mission log</p>
         <h2 id="journey-title" class="section-title">Why we built it, one waypoint at a time.</h2>
@@ -172,13 +172,22 @@
       <div class="journey__map" data-journey-map>
         <svg class="journey__svg" aria-hidden="true">
           <path class="journey__track" data-journey-track/>
-          <path class="journey__trail" data-journey-trail/>
+          <defs>
+            <linearGradient id="tetherFade" gradientUnits="userSpaceOnUse" data-journey-fade>
+              <stop offset="0" stop-color="#d7d1da" stop-opacity="0"/><stop offset=".45" stop-color="#d7d1da"/>
+            </linearGradient>
+            <linearGradient id="tetherFadeEdge" gradientUnits="userSpaceOnUse" data-journey-fade>
+              <stop offset="0" stop-color="#0b0f1e" stop-opacity="0"/><stop offset=".45" stop-color="#0b0f1e"/>
+            </linearGradient>
+          </defs>
+          <path class="journey__tether journey__tether--edge" data-journey-tether-edge/>
+          <path class="journey__tether" data-journey-tether/>
         </svg>
         <div class="journey__markers" data-journey-markers aria-hidden="true"></div>
 
         <ol class="journey__stops">
           <li class="journey__stop" data-stop>
-            <article class="waypoint" data-card>
+            <article class="waypoint">
               <div class="waypoint__head"><span class="waypoint__tag">Ignition</span><span class="waypoint__num">WP-01</span></div>
               <h3 class="waypoint__title">Why build another job runner?</h3>
               <p class="waypoint__body">Most Ruby job libraries lean on Redis or Postgres — tools that were never designed to be message brokers. We wanted an engine built for messaging first.</p>
@@ -186,7 +195,7 @@
             </article>
           </li>
           <li class="journey__stop" data-stop>
-            <article class="waypoint" data-card>
+            <article class="waypoint">
               <div class="waypoint__head"><span class="waypoint__tag">Fuel · NATS</span><span class="waypoint__num">WP-02</span></div>
               <h3 class="waypoint__title">A tiny engine with enormous range</h3>
               <p class="waypoint__body">One NATS server replaces your message broker, job queue and KV store — with far less to operate.</p>
@@ -194,7 +203,7 @@
             </article>
           </li>
           <li class="journey__stop" data-stop>
-            <article class="waypoint" data-card>
+            <article class="waypoint">
               <div class="waypoint__head"><span class="waypoint__tag">Two stages, one rocket</span><span class="waypoint__num">WP-03</span></div>
               <h3 class="waypoint__title">Jobs and streams in one gem</h3>
               <p class="waypoint__body">A first-class Job and a first-class Stream, sharing one server, one config, one CLI and one monitoring endpoint.</p>
@@ -202,7 +211,7 @@
             </article>
           </li>
           <li class="journey__stop" data-stop>
-            <article class="waypoint" data-card>
+            <article class="waypoint">
               <div class="waypoint__head"><span class="waypoint__tag">Time travel</span><span class="waypoint__num">WP-04</span></div>
               <h3 class="waypoint__title">Replay any message, from any moment</h3>
               <p class="waypoint__body">Messages persist to disk. Rewind a consumer to the beginning of time, a timestamp, or only new messages.</p>
@@ -210,7 +219,7 @@
             </article>
           </li>
           <li class="journey__stop" data-stop>
-            <article class="waypoint" data-card>
+            <article class="waypoint">
               <div class="waypoint__head"><span class="waypoint__tag">Deep space network</span><span class="waypoint__num">WP-05</span></div>
               <h3 class="waypoint__title">Multi-datacenter, natively</h3>
               <p class="waypoint__body">Clusters and leaf nodes are built into NATS. Spanning regions is a config block, not another product. Lose a node, lose nothing.</p>
@@ -218,7 +227,7 @@
             </article>
           </li>
           <li class="journey__stop" data-stop>
-            <article class="waypoint" data-card>
+            <article class="waypoint">
               <div class="waypoint__head"><span class="waypoint__tag">No space junk</span><span class="waypoint__num">WP-06</span></div>
               <h3 class="waypoint__title">Dedup at the broker, KV built in</h3>
               <p class="waypoint__body">Same-ID messages inside the window are dropped before they reach a worker. A built-in KV store handles locks and rate limits.</p>
@@ -226,7 +235,7 @@
             </article>
           </li>
           <li class="journey__stop" data-stop>
-            <article class="waypoint" data-card>
+            <article class="waypoint">
               <div class="waypoint__head"><span class="waypoint__tag">Mission control</span><span class="waypoint__num">WP-07</span></div>
               <h3 class="waypoint__title">Watch every job in real time</h3>
               <p class="waypoint__body">Mount Cosmo::Web for a live dashboard of jobs, streams, crons and batches — retry, pause and run from one place.</p>
@@ -234,7 +243,7 @@
             </article>
           </li>
           <li class="journey__stop" data-stop>
-            <article class="waypoint" data-card>
+            <article class="waypoint">
               <div class="waypoint__head"><span class="waypoint__tag">Orbit reached</span><span class="waypoint__num">WP-08</span></div>
               <h3 class="waypoint__title">Battle-tested in production</h3>
               <p class="waypoint__body">Tens of millions of jobs processed and counting. Horizontally scalable, and no message is ever silently dropped.</p>
@@ -243,30 +252,9 @@
           </li>
         </ol>
 
-        <div class="vehicle" data-journey-vehicle aria-hidden="true">
-          <svg class="vehicle__rocket" width="62" height="118" viewBox="0 0 60 116">
-            <g class="vehicle__flame">
-              <path d="M19 84 Q30 120 41 84 Z" fill="#ff8a3d" stroke="#0b0f1e" stroke-width="2.5"/>
-              <path d="M24 84 Q30 106 36 84 Z" fill="#ffe27a"/>
-            </g>
-            <path d="M18 58 L3 86 L19 80 Z" fill="#e2524a" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
-            <path d="M42 58 L57 86 L41 80 Z" fill="#e2524a" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
-            <path d="M30 3 C45 17 47 50 42 84 L18 84 C13 50 15 17 30 3 Z" fill="#f4f1e8" stroke="#0b0f1e" stroke-width="3.5" stroke-linejoin="round"/>
-            <path d="M30 3 C37 10 40 17 41.5 24 L18.5 24 C20 17 23 10 30 3 Z" fill="#e2524a" stroke="#0b0f1e" stroke-width="3" stroke-linejoin="round"/>
-            <circle cx="30" cy="44" r="8.5" fill="#7fe3ff" stroke="#0b0f1e" stroke-width="3.5"/>
-            <path d="M26 41 Q28 38 31 38" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <rect x="27.5" y="64" width="5" height="22" rx="2" fill="#e2524a" stroke="#0b0f1e" stroke-width="2.5"/>
-          </svg>
-          <svg class="vehicle__ufo" width="112" height="76" viewBox="0 0 120 80">
-            <polygon points="48,52 72,52 92,100 28,100" fill="#7fe3ff" opacity="0.25"/>
-            <path d="M38 36 C38 12 82 12 82 36 Z" fill="#9fe6ff" fill-opacity="0.85" stroke="#0b0f1e" stroke-width="3"/>
-            <circle cx="60" cy="28" r="7" fill="#8fe36f" stroke="#0b0f1e" stroke-width="2.5"/>
-            <ellipse cx="60" cy="40" rx="54" ry="13" fill="#c9cfdc" stroke="#0b0f1e" stroke-width="3"/>
-            <ellipse cx="60" cy="47" rx="30" ry="6" fill="#6d7894" stroke="#0b0f1e" stroke-width="3"/>
-            <circle class="anim-blink" cx="20" cy="41" r="3.5" fill="#ffb15a"/>
-            <circle class="anim-blink delay-1" cx="60" cy="44" r="3.5" fill="#7fe3ff"/>
-            <circle class="anim-blink delay-2" cx="100" cy="41" r="3.5" fill="#ffb15a"/>
-          </svg>
+        <div class="cosmonaut" data-journey-cosmonaut aria-hidden="true">
+          <span class="cosmonaut__glow"></span>
+          <img class="cosmonaut__body" src="assets/img/cosmonaut.svg" alt="" width="150" height="200">
         </div>
       </div>
     </section>
