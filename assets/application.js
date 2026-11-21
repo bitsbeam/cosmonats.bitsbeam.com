@@ -8,7 +8,6 @@
  * quietly does nothing when the hook isn't on the current page:
  *
  *   1. Starfield         <canvas data-starfield>     twinkling parallax stars
- *   2. Beam              [data-beam]                 rising 0101 in the tractor beam
  *   3. Journey           .journey [data-journey-map] scroll-driven rocket / UFO
  *   4. Copy              [data-copy]                 copy-to-clipboard buttons
  *   5. Reading progress  [data-reading-progress]     progress bar on posts
@@ -114,45 +113,6 @@
   }
 
   document.querySelectorAll('canvas[data-starfield]').forEach(createStarfield);
-})();
-
-
-/* 2. Beam ================================================================== */
-/**
- * Beam — fills the tractor beam with columns of rising 0/1 digits.
- *
- * Usage: <div class="beam" data-beam data-columns="11"></div>
- */
-(function () {
-  'use strict';
-
-  // Deterministic pseudo-random bit string so the beam looks the same on every load.
-  function bits(seed, length) {
-    let out = '';
-    for (let k = 0; k < length; k++) out += ((seed * 7 + k * 13 + (k * k) % 5) % 3 === 0) ? '1' : '0';
-    return out;
-  }
-
-  document.querySelectorAll('[data-beam]').forEach((beam) => {
-    const columns = parseInt(beam.dataset.columns || '11', 10);
-    const frag = document.createDocumentFragment();
-
-    for (let i = 0; i < columns; i++) {
-      const col = document.createElement('div');
-      col.className = 'beam__col';
-      col.style.left = (20 + i * 5.6) + '%';
-
-      const text = document.createElement('div');
-      text.className = 'beam__bits';
-      text.textContent = bits(i + 1, 34);
-      text.style.setProperty('--dur', (3.2 + (i % 4) * 0.7) + 's');
-      text.style.setProperty('--delay', (-(i * 0.47)) + 's');
-
-      col.appendChild(text);
-      frag.appendChild(col);
-    }
-    beam.appendChild(frag);
-  });
 })();
 
 
